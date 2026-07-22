@@ -50,6 +50,8 @@ const (
 	KeyBackSpace
 	KeyDelete
 	KeyReturn
+	KeyEscape
+	KeyCloseWindow
 	KeyLimit
 )
 

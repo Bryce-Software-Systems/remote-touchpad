@@ -226,3 +226,57 @@ textarea:focus {
         border-left: none;
     }
 } }
+
+button.center,
+.buttons.center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.buttons.bottom {
+    bottom: 0;
+    border-bottom: none;
+}
+
+.buttons.bottom > button {
+    border-bottom: none;
+}
+
+.app-keys {
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.text-input-controls {
+    display: flex;
+    flex-direction: column;
+}
+
+.text-input-controls > .buttons > button {
+    border-top: none;
+    border-right: none;
+}
+
+.text-input-controls > .buttons:last-child > button:last-child {
+    border-bottom: none;
+}
+
+@supports not (-webkit-touch-callout: none) { @media (max-aspect-ratio: 4/3) {
+    .text-input-controls {
+        flex-direction: column;
+    }
+
+    #text-input .text-input-controls > .buttons {
+        flex-direction: row;
+    }
+
+    #text-input .text-input-controls > .buttons > button {
+        border-top: 1px solid black;
+        border-bottom: none;
+    }
+
+    #text-input .text-input-controls > .buttons > button:first-child {
+        border-left: none;
+    }
+} }

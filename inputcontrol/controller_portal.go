@@ -336,6 +336,25 @@ func (p *portalController) KeyboardText(text string) error {
 }
 
 func (p *portalController) KeyboardKey(key Key) error {
+	if key == KeyCloseWindow {
+		for _, item := range [...]struct {
+			keysym Keysym
+			state  uint32
+		}{
+			{xkControlL, btnPressed},
+			{xkW, btnPressed},
+			{xkW, btnReleased},
+			{xkControlL, btnReleased},
+		} {
+			if err := p.portalDesktop.Call(
+				"org.freedesktop.portal.RemoteDesktop.NotifyKeyboardKeysym", 0,
+				p.sessionHandle, map[string]dbus.Variant{}, item.keysym, item.state,
+			).Store(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 	keysym, err := KeyToKeysym(key)
 	if err != nil {
 		return err

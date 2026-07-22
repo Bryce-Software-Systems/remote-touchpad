@@ -31,6 +31,9 @@ const (
 	// X11/keysymdef.h
 	xkBackSpace Keysym = 0xff08
 	xkReturn    Keysym = 0xff0D
+	xkEscape    Keysym = 0xff1B
+	xkControlL  Keysym = 0xffe3
+	xkW         Keysym = 0x0077
 	xkDelete    Keysym = 0xffff
 	xkHome      Keysym = 0xff50
 	xkLeft      Keysym = 0xff51
@@ -71,6 +74,8 @@ func KeyToKeysym(key Key) (Keysym, error) {
 		return xkBackSpace, nil
 	case KeyReturn:
 		return xkReturn, nil
+	case KeyEscape:
+		return xkEscape, nil
 	case KeyDelete:
 		return xkDelete, nil
 	case KeyHome:
