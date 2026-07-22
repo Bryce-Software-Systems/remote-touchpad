@@ -21,19 +21,36 @@
     <p class="background">Touchpad</p>
     <button class="top left" onclick="app.showKeys()">≡</button>
     <button class="bottom left visible-if-fullscreen-enabled" onclick="app.toggleFullscreen()">⤢</button>
+    <div class="buttons bottom center app-keys">
+        <button onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
+        <button onclick="app.key(app.KEY_RETURN)">⮠</button>
+        <button onclick="app.key(app.KEY_ESCAPE)">⎋</button>
+    </div>
     <button class="bottom right" onclick="app.showTextInput()">⌨</button>
 </div>
 
 <div id="text-input" class="scene">
     <textarea class="grow" cols=1 rows=1></textarea>
-    <div class="buttons">
-        <button onclick="app.showKeys('text-input', 1)">≡</button>
-        <button class="grow" id="send-text" data-send-content="➣" data-back-content="⯇"></button>
+    <div class="text-input-controls">
+        <div class="buttons app-keys">
+            <button onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
+            <button onclick="app.key(app.KEY_RETURN)">⮠</button>
+            <button onclick="app.key(app.KEY_ESCAPE)">⎋</button>
+        </div>
+        <div class="buttons">
+            <button onclick="app.showKeys('text-input', 1)">≡</button>
+            <button class="grow" id="send-text" data-send-content="➣" data-back-content="⯇"></button>
+        </div>
     </div>
 </div>
 
 <div id="keys" class="scene touch-input mouse-input keyboard-input allow-fullscreen">
     <div class="page">
+        <div class="buttons app-keys">
+            <button onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
+            <button onclick="app.key(app.KEY_RETURN)">⮠</button>
+            <button onclick="app.key(app.KEY_ESCAPE)">⎋</button>
+        </div>
         <div class="buttons" style="grid-column: 1 / 4">
             <button onclick="app.key(app.KEY_BROWSER_BACK)">⭠</button>
             <button onclick="app.key(app.KEY_SUPER)">🪟</button>
@@ -51,6 +68,11 @@
         </div>
     </div>
     <div class="page">
+        <div class="buttons app-keys">
+            <button onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
+            <button onclick="app.key(app.KEY_RETURN)">⮠</button>
+            <button onclick="app.key(app.KEY_ESCAPE)">⎋</button>
+        </div>
         <div class="buttons" style="grid-column: 1 / 4">
             <button onclick="app.key(app.KEY_BACK_SPACE)">⌫</button>
             <button onclick="app.key(app.KEY_RETURN)">⮠</button>
@@ -68,6 +90,11 @@
         </div>
     </div>
     <div class="page">
+        <div class="buttons app-keys">
+            <button onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
+            <button onclick="app.key(app.KEY_RETURN)">⮠</button>
+            <button onclick="app.key(app.KEY_ESCAPE)">⎋</button>
+        </div>
         <button onclick="app.key(app.KEY_BACK_SPACE)">⌫</button>
         <button onclick="app.text(this.textContent)">/</button>
         <button onclick="app.text(this.textContent)">*</button>

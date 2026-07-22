@@ -127,12 +127,21 @@ func (p *uinputController) KeyboardText(text string) error {
 }
 
 func (p *uinputController) KeyboardKey(key Key) error {
+	if key == KeyCloseWindow {
+		if err := p.keyboard.KeyDown(uinput.KeyLeftctrl); err != nil {
+			return err
+		}
+		defer p.keyboard.KeyUp(uinput.KeyLeftctrl)
+		return p.keyboard.KeyPress(uinput.KeyW)
+	}
 	var uinputKey int
 	switch key {
 	case KeyBackSpace:
 		uinputKey = uinput.KeyBackspace
 	case KeyReturn:
 		uinputKey = uinput.KeyEnter
+	case KeyEscape:
+		uinputKey = uinput.KeyEsc
 	case KeyDelete:
 		uinputKey = uinput.KeyDelete
 	case KeyHome:

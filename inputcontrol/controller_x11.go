@@ -286,7 +286,34 @@ func (p *x11Controller) KeyboardText(text string) error {
 	return p.keyboardKeys(keys)
 }
 
+func (p *x11Controller) keyboardShortcut(keys []Keysym) error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	if p.display == nil {
+		return errors.New("X server connection closed")
+	}
+	keycodes := make([]C.KeyCode, 0, len(keys))
+	for _, keysym := range keys {
+		keycode := C.XKeysymToKeycode(p.display, C.KeySym(keysym))
+		if keycode == 0 {
+			return fmt.Errorf("keysym not mapped to keycode: %#v", keysym)
+		}
+		keycodes = append(keycodes, keycode)
+	}
+	for _, keycode := range keycodes {
+		C.XTestFakeKeyEvent(p.display, C.uint(keycode), C.True, 0)
+	}
+	for i := len(keycodes) - 1; i >= 0; i -= 1 {
+		C.XTestFakeKeyEvent(p.display, C.uint(keycodes[i]), C.False, 0)
+	}
+	C.XFlush(p.display)
+	return nil
+}
+
 func (p *x11Controller) KeyboardKey(key Key) error {
+	if key == KeyCloseWindow {
+		return p.keyboardShortcut([]Keysym{xkControlL, xkW})
+	}
 	keysym, err := KeyToKeysym(key)
 	if err != nil {
 		return err

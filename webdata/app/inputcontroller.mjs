@@ -39,6 +39,8 @@ export const KEY_END = 14;
 export const KEY_BACK_SPACE = 15;
 export const KEY_DELETE = 16;
 export const KEY_RETURN = 17;
+export const KEY_ESCAPE = 18;
+export const KEY_CLOSE_WINDOW = 19;
 
 export default class InputController {
     #updateRate = 0;

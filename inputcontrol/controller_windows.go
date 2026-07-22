@@ -36,6 +36,9 @@ const (
 
 	vkBack           uint16 = 0x8
 	vkReturn         uint16 = 0xD
+	vkEscape         uint16 = 0x1B
+	vkControl        uint16 = 0x11
+	vkW              uint16 = 0x57
 	vkEnd            uint16 = 0x23
 	vkHome           uint16 = 0x24
 	vkLeft           uint16 = 0x25
@@ -133,12 +136,23 @@ func (p *windowsController) KeyboardText(text string) error {
 }
 
 func (p *windowsController) KeyboardKey(key Key) error {
+	if key == KeyCloseWindow {
+		inputs := []keybdInput{
+			{typ: inputKeyboard, wVk: vkControl},
+			{typ: inputKeyboard, wVk: vkW},
+			{typ: inputKeyboard, wVk: vkW, dwFlags: keyeventfKeyup},
+			{typ: inputKeyboard, wVk: vkControl, dwFlags: keyeventfKeyup},
+		}
+		return p.sendInput(inputs)
+	}
 	input := keybdInput{typ: inputKeyboard}
 	switch key {
 	case KeyBackSpace:
 		input.wVk = vkBack
 	case KeyReturn:
 		input.wVk = vkReturn
+	case KeyEscape:
+		input.wVk = vkEscape
 	case KeyEnd:
 		input.wVk = vkEnd
 	case KeyHome:
