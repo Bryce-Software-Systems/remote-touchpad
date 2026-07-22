@@ -21,21 +21,25 @@
     <p class="background">Touchpad</p>
     <button class="top left" onclick="app.showKeys()">≡</button>
     <button class="bottom left visible-if-fullscreen-enabled" onclick="app.toggleFullscreen()">⤢</button>
-    <div class="buttons bottom center app-keys">
-        <button onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
-        <button onclick="app.key(app.KEY_RETURN)">⮠</button>
-        <button onclick="app.key(app.KEY_ESCAPE)">⎋</button>
+    <div class="buttons bottom center app-keys pad-keys">
+        <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
+        <button aria-label="Left arrow" onclick="app.key(app.KEY_LEFT)">←</button>
+        <button aria-label="Up arrow" onclick="app.key(app.KEY_UP)">↑</button>
+        <button aria-label="Down arrow" onclick="app.key(app.KEY_DOWN)">↓</button>
+        <button aria-label="Right arrow" onclick="app.key(app.KEY_RIGHT)">→</button>
+        <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
+        <button aria-label="Escape" onclick="app.key(app.KEY_ESCAPE)">⎋</button>
+        <button aria-label="Keyboard" onclick="app.showTextInput()">⌨</button>
     </div>
-    <button class="bottom right" onclick="app.showTextInput()">⌨</button>
 </div>
 
 <div id="text-input" class="scene">
     <textarea class="grow" cols=1 rows=1></textarea>
     <div class="text-input-controls">
         <div class="buttons app-keys">
-            <button onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
-            <button onclick="app.key(app.KEY_RETURN)">⮠</button>
-            <button onclick="app.key(app.KEY_ESCAPE)">⎋</button>
+            <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
+            <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
+            <button aria-label="Escape" onclick="app.key(app.KEY_ESCAPE)">⎋</button>
         </div>
         <div class="buttons">
             <button onclick="app.showKeys('text-input', 1)">≡</button>
@@ -47,35 +51,30 @@
 <div id="keys" class="scene touch-input mouse-input keyboard-input allow-fullscreen">
     <div class="page">
         <div class="buttons app-keys">
-            <button onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
-            <button onclick="app.key(app.KEY_RETURN)">⮠</button>
-            <button onclick="app.key(app.KEY_ESCAPE)">⎋</button>
+            <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
+            <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
+            <button aria-label="Escape" onclick="app.key(app.KEY_ESCAPE)">⎋</button>
         </div>
         <div class="buttons" style="grid-column: 1 / 4">
-            <button onclick="app.key(app.KEY_BROWSER_BACK)">⭠</button>
-            <button onclick="app.key(app.KEY_SUPER)">🪟</button>
-            <button onclick="app.key(app.KEY_BROWSER_FORWARD)">⭢</button>
+            <button aria-label="Browser back" onclick="app.key(app.KEY_BROWSER_BACK)">←</button>
+            <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
+            <button aria-label="Browser forward" onclick="app.key(app.KEY_BROWSER_FORWARD)">→</button>
         </div>
         <div class="buttons" style="grid-column: 1 / 4">
-            <button onclick="app.key(app.KEY_MEDIA_PREV_TRACK)">⏮</button>
-            <button onclick="app.key(app.KEY_MEDIA_PLAY_PAUSE)">⏯</button>
-            <button onclick="app.key(app.KEY_MEDIA_NEXT_TRACK)">⏭</button>
-        </div>
-        <div class="buttons" style="grid-column: 1 / 4">
-            <button onclick="app.key(app.KEY_VOLUME_DOWN)">🔉</button>
-            <button onclick="app.key(app.KEY_VOLUME_MUTE)">🔇</button>
-            <button onclick="app.key(app.KEY_VOLUME_UP)">🔊</button>
+            <button aria-label="Previous track" onclick="app.key(app.KEY_MEDIA_PREV_TRACK)">⏮</button>
+            <button aria-label="Play or pause" onclick="app.key(app.KEY_MEDIA_PLAY_PAUSE)">⏯</button>
+            <button aria-label="Next track" onclick="app.key(app.KEY_MEDIA_NEXT_TRACK)">⏭</button>
         </div>
     </div>
     <div class="page">
         <div class="buttons app-keys">
-            <button onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
-            <button onclick="app.key(app.KEY_RETURN)">⮠</button>
-            <button onclick="app.key(app.KEY_ESCAPE)">⎋</button>
+            <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
+            <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
+            <button aria-label="Escape" onclick="app.key(app.KEY_ESCAPE)">⎋</button>
         </div>
         <div class="buttons" style="grid-column: 1 / 4">
             <button onclick="app.key(app.KEY_BACK_SPACE)">⌫</button>
-            <button onclick="app.key(app.KEY_RETURN)">⮠</button>
+            <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
             <button onclick="app.key(app.KEY_DELETE)">⌦</button>
         </div>
         <div class="buttons" style="grid-column: 1 / 4">
@@ -91,9 +90,9 @@
     </div>
     <div class="page">
         <div class="buttons app-keys">
-            <button onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
-            <button onclick="app.key(app.KEY_RETURN)">⮠</button>
-            <button onclick="app.key(app.KEY_ESCAPE)">⎋</button>
+            <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
+            <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
+            <button aria-label="Escape" onclick="app.key(app.KEY_ESCAPE)">⎋</button>
         </div>
         <button onclick="app.key(app.KEY_BACK_SPACE)">⌫</button>
         <button onclick="app.text(this.textContent)">/</button>
@@ -119,7 +118,7 @@
         <button onclick="app.text(this.textContent)"><script>document.write(Intl.NumberFormat().formatToParts(1.1).find(x => x.type === "decimal").value)</script></button>
     </div>
     <button class="top right" onclick="app.setKeysPage(1, true)">⮂</button>
-    <button class="top left" onclick="history.back()">⯇</button>
+    <button class="top left" aria-label="Back" onclick="history.back()">←</button>
 </div>
 
 <div id="mouse" class="scene keyboard-input allow-fullscreen">

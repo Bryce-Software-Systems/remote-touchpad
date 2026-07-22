@@ -83,7 +83,7 @@ button {
     border-radius: 2px;
     font-size: 2rem;
     color: white;
-    font-family: "icon";
+    font-family: "icon", sans-serif;
     overflow: hidden;
     cursor: pointer;
     transition: box-shadow 0.2s ease-out;
@@ -280,3 +280,19 @@ button.center,
         border-left: none;
     }
 } }
+
+.pad-keys {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.pad-keys > button {
+    flex: 1 1 0;
+    width: 2em;
+}
+
+@media (max-width: 36rem) {
+    .pad-keys > button {
+        font-size: min(2rem, 7vw);
+    }
+}
