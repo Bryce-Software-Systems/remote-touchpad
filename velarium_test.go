@@ -184,3 +184,17 @@ func TestDownscaleKeepsSmallImagesAndAspectRatio(t *testing.T) {
 		t.Fatalf("aspect ratio lost: %v", got)
 	}
 }
+
+func TestDefaultSocketFollowsTheLaunchersRuntimeDirectoryChoice(t *testing.T) {
+	runtime := t.TempDir()
+	t.Setenv("XDG_RUNTIME_DIR", runtime)
+	if got, want := defaultVelariumSocket(), filepath.Join(runtime, "velarium", "control.sock"); got != want {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+	home := t.TempDir()
+	t.Setenv("XDG_RUNTIME_DIR", filepath.Join(runtime, "does-not-exist"))
+	t.Setenv("HOME", home)
+	if got, want := defaultVelariumSocket(), filepath.Join(home, ".cache", "velarium", "control.sock"); got != want {
+		t.Fatalf("missing runtime dir: got %q, want %q", got, want)
+	}
+}

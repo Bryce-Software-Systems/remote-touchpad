@@ -55,12 +55,21 @@ type velariumClient struct {
 	iconCache map[string]string // path|mtime -> data URL
 }
 
+// defaultVelariumSocket mirrors the launcher's own choice of runtime directory (htpc/control_server.py): the user's
+// XDG_RUNTIME_DIR, else /run/user/<uid>, else ~/.cache when that does not exist.
 func defaultVelariumSocket() string {
-	runtime := os.Getenv("XDG_RUNTIME_DIR")
-	if runtime == "" {
-		return ""
+	base := os.Getenv("XDG_RUNTIME_DIR")
+	if base == "" {
+		base = fmt.Sprintf("/run/user/%d", os.Getuid())
 	}
-	return filepath.Join(runtime, "velarium", "control.sock")
+	if info, err := os.Stat(base); err != nil || !info.IsDir() {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return ""
+		}
+		base = filepath.Join(home, ".cache")
+	}
+	return filepath.Join(base, "velarium", "control.sock")
 }
 
 func newVelariumClient(socketPath string) *velariumClient {
