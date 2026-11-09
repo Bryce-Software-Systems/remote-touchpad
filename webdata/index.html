@@ -1,126 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, interactive-widget=resizes-content">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, interactive-widget=resizes-content">
+<meta name="theme-color" content="#0b1220">
 <script src="app/main.mjs" type="module"></script>
-<title>Remote Touchpad</title>
+<title>Velarium Remote</title>
 <link href="main.css" media="screen" rel="stylesheet">
 <link href="icon.png" type="image/png" rel="icon">
 
-<div id="opening" class="scene">
+<!-- Icon sprite: every icon is a 24x24 stroke icon drawn with currentColor. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-remote" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="8" r="1.6"/><path d="M10 14h4M10 17.5h4"/></symbol>
+    <symbol id="i-pad" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 15h18M12 15v4"/></symbol>
+    <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V6M6 11l6-6 6 6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v13M6 13l6 6 6-6"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M19 12H6M11 6l-6 6 6 6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 6 6"/></symbol>
+    <symbol id="i-playpause" viewBox="0 0 24 24"><path d="M5 4.5v15l8-7.5z"/><path d="M17 5v14M21 5v14"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="M18 5v14l-9-7z"/><path d="M6 5v14"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M6 5v14l9-7z"/><path d="M18 5v14"/></symbol>
+    <symbol id="i-vol-up" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></symbol>
+    <symbol id="i-vol-down" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M3 11.5L21 3l-7 18-3-7.5z"/><path d="M11 13.5L21 3"/></symbol>
+    <symbol id="i-backspace" viewBox="0 0 24 24"><path d="M9 5h11a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H9l-6-7z"/><path d="M12 9l5 6M17 9l-5 6"/></symbol>
+    <symbol id="i-enter" viewBox="0 0 24 24"><path d="M20 5v8a3 3 0 0 1-3 3H5M9 12l-4 4 4 4"/></symbol>
+    <symbol id="i-fullscreen" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+</svg>
+
+<div id="opening" class="overlay">
     <noscript><p>JavaScript is required!</p></noscript>
-    <p>Connecting…</p>
+    <div class="spinner" aria-hidden="true"></div>
+    <p>Connecting to your TV…</p>
 </div>
 
-<div id="closed" class="scene">
+<div id="closed" class="overlay hidden">
     <p>Disconnected</p>
-    <button class="large" onclick="location.reload()">↻</button>
+    <p class="sub">The remote lost its connection to the TV box.</p>
+    <button class="primary" onclick="location.reload()">Reconnect</button>
 </div>
 
-<div id="pad" class="scene touch-input mouse-input keyboard-input allow-fullscreen">
-    <p class="background">Touchpad</p>
-    <button class="top left" onclick="app.showKeys()">≡</button>
-    <button class="bottom left visible-if-fullscreen-enabled" onclick="app.toggleFullscreen()">⤢</button>
-    <div class="buttons bottom center app-keys pad-keys">
-        <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
-        <button aria-label="Left arrow" onclick="app.key(app.KEY_LEFT)">←</button>
-        <button aria-label="Up arrow" onclick="app.key(app.KEY_UP)">↑</button>
-        <button aria-label="Down arrow" onclick="app.key(app.KEY_DOWN)">↓</button>
-        <button aria-label="Right arrow" onclick="app.key(app.KEY_RIGHT)">→</button>
-        <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
-        <button aria-label="Escape" onclick="app.key(app.KEY_ESCAPE)">⎋</button>
-        <button aria-label="Keyboard" onclick="app.showTextInput()">⌨</button>
+<header class="topbar">
+    <div class="brand">
+        <img src="icon.png" alt="" width="28" height="28">
+        <div>
+            <strong>Velarium</strong>
+            <span id="status-line" class="status-line">Remote</span>
+        </div>
+    </div>
+    <div class="top-actions">
+        <button id="btn-home" class="action home" aria-label="Go to the Velarium home screen">
+            <svg class="ico"><use href="#i-home"/></svg><span>Home</span>
+        </button>
+        <button id="btn-power" class="action icon-only" aria-label="Power options">
+            <svg class="ico"><use href="#i-power"/></svg>
+        </button>
+    </div>
+</header>
+
+<main>
+    <!-- HOME: the Velarium launcher on your phone -->
+    <section id="view-home" class="view" data-tab="home">
+        <div id="app-banner" class="banner hidden">
+            <div>
+                <strong id="app-banner-title">An app is open on the TV</strong>
+                <span>Close it to return to the home screen.</span>
+            </div>
+            <button id="btn-close-app" class="danger"><svg class="ico"><use href="#i-close"/></svg>Close app</button>
+        </div>
+        <label class="search">
+            <svg class="ico"><use href="#i-search"/></svg>
+            <input id="app-search" type="search" placeholder="Search apps" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+        </label>
+        <nav id="crumbs" class="crumbs hidden" aria-label="Menu path"></nav>
+        <div id="home-message" class="message hidden"></div>
+        <div id="tiles" class="tiles" role="list"></div>
+    </section>
+
+    <!-- REMOTE: D-pad, back/home, volume and media -->
+    <section id="view-remote" class="view keyboard-input" data-tab="remote">
+        <div class="dpad" role="group" aria-label="Directional pad">
+            <button class="key up" data-key="UP" data-repeat aria-label="Up"><svg class="ico"><use href="#i-up"/></svg></button>
+            <button class="key left" data-key="LEFT" data-repeat aria-label="Left"><svg class="ico"><use href="#i-left"/></svg></button>
+            <button class="key ok" data-key="RETURN" aria-label="OK">OK</button>
+            <button class="key right" data-key="RIGHT" data-repeat aria-label="Right"><svg class="ico"><use href="#i-right"/></svg></button>
+            <button class="key down" data-key="DOWN" data-repeat aria-label="Down"><svg class="ico"><use href="#i-down"/></svg></button>
+        </div>
+        <div class="row two">
+            <button class="key wide" data-key="ESCAPE"><svg class="ico"><use href="#i-back"/></svg>Back</button>
+            <button class="key wide accent" data-action="home"><svg class="ico"><use href="#i-home"/></svg>Home</button>
+        </div>
+        <div class="row three media">
+            <button class="key" data-key="MEDIA_PREV_TRACK" aria-label="Previous"><svg class="ico"><use href="#i-prev"/></svg></button>
+            <button class="key" data-key="MEDIA_PLAY_PAUSE" aria-label="Play or pause"><svg class="ico"><use href="#i-playpause"/></svg></button>
+            <button class="key" data-key="MEDIA_NEXT_TRACK" aria-label="Next"><svg class="ico"><use href="#i-next"/></svg></button>
+        </div>
+        <div class="row three volume">
+            <button class="key" data-key="VOLUME_DOWN" data-repeat aria-label="Volume down"><svg class="ico"><use href="#i-vol-down"/></svg></button>
+            <button class="key" data-key="VOLUME_MUTE" aria-label="Mute"><svg class="ico"><use href="#i-mute"/></svg></button>
+            <button class="key" data-key="VOLUME_UP" data-repeat aria-label="Volume up"><svg class="ico"><use href="#i-vol-up"/></svg></button>
+        </div>
+    </section>
+
+    <!-- TOUCHPAD -->
+    <section id="view-pad" class="view pad-view keyboard-input allow-fullscreen" data-tab="pad">
+        <div id="pad-surface" class="pad-surface touch-input mouse-input">
+            <p class="hint">Drag to move<br>Tap to click · two fingers to scroll</p>
+        </div>
+        <div class="pad-bar">
+            <button class="key" id="btn-left-click">Left click</button>
+            <button class="key" id="btn-right-click">Right click</button>
+            <button class="key visible-if-fullscreen-enabled" id="btn-fullscreen" aria-label="Toggle fullscreen"><svg class="ico"><use href="#i-fullscreen"/></svg></button>
+        </div>
+    </section>
+
+    <!-- KEYBOARD -->
+    <section id="view-keys" class="view" data-tab="keys">
+        <textarea id="text-box" rows="3" placeholder="Type here, then press Send" autocapitalize="sentences" enterkeyhint="send"></textarea>
+        <div class="row three text-actions">
+            <button id="btn-send" class="primary"><svg class="ico"><use href="#i-send"/></svg>Send</button>
+            <button id="btn-clear" class="key"><svg class="ico"><use href="#i-trash"/></svg>Clear</button>
+            <label class="switch"><input id="live-typing" type="checkbox"><span>Type live</span></label>
+        </div>
+        <p class="tip">Select a text box on the TV (a search field, for example), then type here. Turn on <b>Type live</b> to send each letter as you type.</p>
+        <div class="grid keys-grid">
+            <button class="key" data-key="BACK_SPACE" data-repeat aria-label="Backspace"><svg class="ico"><use href="#i-backspace"/></svg></button>
+            <button class="key" data-key="RETURN" aria-label="Enter"><svg class="ico"><use href="#i-enter"/></svg></button>
+            <button class="key" data-key="ESCAPE" aria-label="Back"><svg class="ico"><use href="#i-back"/></svg></button>
+            <button class="key" data-key="LEFT" data-repeat aria-label="Left"><svg class="ico"><use href="#i-left"/></svg></button>
+            <button class="key" data-key="UP" data-repeat aria-label="Up"><svg class="ico"><use href="#i-up"/></svg></button>
+            <button class="key" data-key="DOWN" data-repeat aria-label="Down"><svg class="ico"><use href="#i-down"/></svg></button>
+            <button class="key" data-key="RIGHT" data-repeat aria-label="Right"><svg class="ico"><use href="#i-right"/></svg></button>
+            <button class="key" data-key="DELETE">Del</button>
+            <button class="key" data-key="HOME">Home</button>
+            <button class="key" data-key="END">End</button>
+        </div>
+    </section>
+</main>
+
+<nav class="tabbar" aria-label="Sections">
+    <button data-go="home" class="tab"><svg class="ico"><use href="#i-folder"/></svg><span>Apps</span></button>
+    <button data-go="remote" class="tab"><svg class="ico"><use href="#i-remote"/></svg><span>Remote</span></button>
+    <button data-go="pad" class="tab"><svg class="ico"><use href="#i-pad"/></svg><span>Touchpad</span></button>
+    <button data-go="keys" class="tab"><svg class="ico"><use href="#i-keyboard"/></svg><span>Keyboard</span></button>
+</nav>
+
+<div id="sheet" class="sheet hidden" role="dialog" aria-modal="true" aria-label="Power options">
+    <div class="sheet-backdrop" data-close-sheet></div>
+    <div class="sheet-panel">
+        <h2>Power</h2>
+        <button class="sheet-item" data-power="sleep"><svg class="ico"><use href="#i-power"/></svg><span>Sleep</span></button>
+        <button class="sheet-item" data-power="restart"><svg class="ico"><use href="#i-power"/></svg><span>Restart</span></button>
+        <button class="sheet-item danger" data-power="shutdown"><svg class="ico"><use href="#i-power"/></svg><span>Shut down</span></button>
+        <button class="sheet-item cancel" data-close-sheet>Cancel</button>
     </div>
 </div>
 
-<div id="text-input" class="scene">
-    <textarea class="grow" cols=1 rows=1></textarea>
-    <div class="text-input-controls">
-        <div class="buttons app-keys">
-            <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
-            <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
-            <button aria-label="Escape" onclick="app.key(app.KEY_ESCAPE)">⎋</button>
-        </div>
-        <div class="buttons">
-            <button onclick="app.showKeys('text-input', 1)">≡</button>
-            <button class="grow" id="send-text" data-send-content="➣" data-back-content="⯇"></button>
-        </div>
-    </div>
-</div>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
-<div id="keys" class="scene touch-input mouse-input keyboard-input allow-fullscreen">
-    <div class="page">
-        <div class="buttons app-keys">
-            <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
-            <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
-            <button aria-label="Escape" onclick="app.key(app.KEY_ESCAPE)">⎋</button>
-        </div>
-        <div class="buttons" style="grid-column: 1 / 4">
-            <button aria-label="Browser back" onclick="app.key(app.KEY_BROWSER_BACK)">←</button>
-            <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
-            <button aria-label="Browser forward" onclick="app.key(app.KEY_BROWSER_FORWARD)">→</button>
-        </div>
-        <div class="buttons" style="grid-column: 1 / 4">
-            <button aria-label="Previous track" onclick="app.key(app.KEY_MEDIA_PREV_TRACK)">⏮</button>
-            <button aria-label="Play or pause" onclick="app.key(app.KEY_MEDIA_PLAY_PAUSE)">⏯</button>
-            <button aria-label="Next track" onclick="app.key(app.KEY_MEDIA_NEXT_TRACK)">⏭</button>
-        </div>
-    </div>
-    <div class="page">
-        <div class="buttons app-keys">
-            <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
-            <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
-            <button aria-label="Escape" onclick="app.key(app.KEY_ESCAPE)">⎋</button>
-        </div>
-        <div class="buttons" style="grid-column: 1 / 4">
-            <button onclick="app.key(app.KEY_BACK_SPACE)">⌫</button>
-            <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
-            <button onclick="app.key(app.KEY_DELETE)">⌦</button>
-        </div>
-        <div class="buttons" style="grid-column: 1 / 4">
-            <button onclick="app.key(app.KEY_HOME)">⭰</button>
-            <button onclick="app.key(app.KEY_UP)">↑</button>
-            <button onclick="app.key(app.KEY_END)">⭲</button>
-        </div>
-        <div class="buttons" style="grid-column: 1 / 4">
-            <button onclick="app.key(app.KEY_LEFT)">←</button>
-            <button onclick="app.key(app.KEY_DOWN)">↓</button>
-            <button onclick="app.key(app.KEY_RIGHT)">→</button>
-        </div>
-    </div>
-    <div class="page">
-        <div class="buttons app-keys">
-            <button aria-label="Home" onclick="app.key(app.KEY_CLOSE_WINDOW)">⌂</button>
-            <button aria-label="Enter" onclick="app.key(app.KEY_RETURN)">⮠</button>
-            <button aria-label="Escape" onclick="app.key(app.KEY_ESCAPE)">⎋</button>
-        </div>
-        <button onclick="app.key(app.KEY_BACK_SPACE)">⌫</button>
-        <button onclick="app.text(this.textContent)">/</button>
-        <button onclick="app.text(this.textContent)">*</button>
-        <button onclick="app.text(this.textContent)">-</button>
-
-        <button style="grid-row: 2" onclick="app.text(this.textContent)">7</button>
-        <button onclick="app.text(this.textContent)">8</button>
-        <button onclick="app.text(this.textContent)">9</button>
-        <button onclick="app.text(this.textContent)">+</button>
-
-        <button style="grid-row: 3" onclick="app.text(this.textContent)">4</button>
-        <button onclick="app.text(this.textContent)">5</button>
-        <button onclick="app.text(this.textContent)">6</button>
-        <button onclick="app.text(this.textContent)">=</button>
-
-        <button style="grid-row: 4" onclick="app.text(this.textContent)">1</button>
-        <button onclick="app.text(this.textContent)">2</button>
-        <button onclick="app.text(this.textContent)">3</button>
-        <button style="grid-row: 4 / 6; grid-column: 4" onclick="app.key(app.KEY_RETURN)">⮠</button>
-
-        <button style="grid-row: 5; grid-column: 1 / 3" onclick="app.text(this.textContent)">0</button>
-        <button onclick="app.text(this.textContent)"><script>document.write(Intl.NumberFormat().formatToParts(1.1).find(x => x.type === "decimal").value)</script></button>
-    </div>
-    <button class="top right" onclick="app.setKeysPage(1, true)">⮂</button>
-    <button class="top left" aria-label="Back" onclick="history.back()">←</button>
-</div>
-
-<div id="mouse" class="scene keyboard-input allow-fullscreen">
-    <p class="background">Mouse</p>
-</div>
+<!-- Desktop mouse mode (pointer lock) -->
+<div id="mouse" class="overlay hidden keyboard-input allow-fullscreen"><p class="sub">Mouse captured · press Esc to release</p></div>

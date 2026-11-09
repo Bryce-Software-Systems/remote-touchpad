@@ -26,10 +26,15 @@ const challengeResponse = (message, secret) => {
     return btoa(shaObj.getHMAC("BYTES"));
 };
 
+const REQUEST_TIMEOUT = 8000; // milliseconds
+
 export default class Socket extends EventTarget {
     #secret;
     #authenticated;
+    #configured = false;
     #ws;
+    #nextRequestId = 1;
+    #pending = new Map();
 
     constructor(url, secret) {
         super();
@@ -46,21 +51,56 @@ export default class Socket extends EventTarget {
             this.#authenticated = true;
             return;
         }
-        let config;
+        let message;
         try {
-            config = JSON.parse(event.data);
+            message = JSON.parse(event.data);
         } catch (e) {
             this.#ws.close();
             throw (e);
         }
-        this.dispatchEvent(new CustomEvent("config", {detail: config}));
+        if (!this.#configured) {
+            this.#configured = true;
+            this.dispatchEvent(new CustomEvent("config", {detail: message}));
+            return;
+        }
+        // Everything after the config is the answer to a request() (see velarium.mjs).
+        const pending = this.#pending.get(message.id);
+        if (pending) {
+            this.#pending.delete(message.id);
+            clearTimeout(pending.timer);
+            pending.resolve(message);
+        }
     }
 
     #handle_ws_close() {
+        for (const [, pending] of this.#pending) {
+            clearTimeout(pending.timer);
+            pending.reject(new Error("Disconnected"));
+        }
+        this.#pending.clear();
         this.dispatchEvent(new CustomEvent("close"));
     }
 
     send(message) {
         this.#ws.send(message);
+    }
+
+    // Sends a Velarium request ("v" + JSON) and resolves with the launcher's reply.
+    request(payload) {
+        return new Promise((resolve, reject) => {
+            const id = this.#nextRequestId++;
+            const timer = setTimeout(() => {
+                this.#pending.delete(id);
+                reject(new Error("The TV box did not answer in time"));
+            }, REQUEST_TIMEOUT);
+            this.#pending.set(id, {resolve, reject, timer});
+            try {
+                this.#ws.send("v" + JSON.stringify({...payload, id}));
+            } catch (e) {
+                this.#pending.delete(id);
+                clearTimeout(timer);
+                reject(e);
+            }
+        });
     }
 }

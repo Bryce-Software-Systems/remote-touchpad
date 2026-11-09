@@ -20,13 +20,15 @@
 import InputController, * as inputcontrollerModule from "./inputcontroller.mjs";
 import Socket from "./socket.mjs";
 import UI from "./ui.mjs";
+import Velarium from "./velarium.mjs";
 
 const url = new URL("ws", location.href);
 url.protocol = url.protocol == "http:" ? "ws:" : "wss:";
 
 const socket = new Socket(url, window.location.hash.substr(1));
 const inputController = new InputController(socket);
-const ui = new UI(inputController);
+const velarium = new Velarium(socket);
+const ui = new UI(inputController, velarium);
 
 socket.addEventListener("config", (event) => {
     const config = event.detail;
@@ -42,9 +44,6 @@ window.app = {
     key: inputController.keyboardKey.bind(inputController),
     text: inputController.keyboardText.bind(inputController),
     toggleFullscreen: ui.toggleFullscreen.bind(ui),
-    showTextInput: ui.showTextInput.bind(ui),
-    showKeys: ui.showKeys.bind(ui),
-    setKeysPage: ui.setKeysPage.bind(ui),
 };
 for (const name in inputcontrollerModule) {
     if (name.startsWith("KEY_")) {

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0 (Velarium fork)
+
+* Complete redesign of the web UI: fixed top bar with Home and Power, four screens (Apps, Remote, Touchpad,
+  Keyboard) behind an always-visible tab bar, big touch targets, hold-to-repeat arrow/volume keys, live typing.
+  Nothing is positioned on top of anything else any more (the Home button used to clip other buttons).
+* Velarium integration: when a Velarium launcher is reachable (`-velarium-socket`, default
+  `$XDG_RUNTIME_DIR/velarium/control.sock`) the Apps screen lists the launcher's menus with their icons, tapping an
+  app launches it, Home closes the app in front and returns to the launcher, and Power offers sleep/restart/shut down.
+* Release workflow that builds the x86_64 and aarch64 binaries Velarium ships.
+
 ## 1.5.3 (2025-12-24)
 
 * Update dependencies

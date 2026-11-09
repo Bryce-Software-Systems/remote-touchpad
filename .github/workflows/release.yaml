@@ -1,0 +1,55 @@
+name: Release
+# Builds the Linux binaries Velarium ships (portal + uinput + x11 controllers) for x86_64 and aarch64 and attaches
+# them, with SHA256SUMS, to a GitHub release. Velarium picks them up with scripts/update_remote_touchpad.sh.
+# Run it by pushing a tag (git tag v1.6.0 && git push origin v1.6.0) or from the Actions tab.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to create/update (for example v1.6.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: sudo apt-get update && sudo apt-get install -y libxrandr-dev libxtst-dev libxt-dev
+      - run: go test -tags null ./...
+      - run: go build -trimpath -ldflags "-s -w" -tags portal,uinput,x11 -o remote-touchpad-linux-${{ matrix.arch }} .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: remote-touchpad-linux-${{ matrix.arch }}
+          path: remote-touchpad-linux-${{ matrix.arch }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - run: cd dist && sha256sum remote-touchpad-linux-* > SHA256SUMS && cat SHA256SUMS
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || gh release create "$TAG" --repo "$REPO" --title "$TAG" --generate-notes
+          gh release upload "$TAG" dist/* --repo "$REPO" --clobber
