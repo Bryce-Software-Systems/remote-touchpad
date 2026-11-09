@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.2 (Velarium fork)
+
+* Removed the Cinema server/sign-in form from More > Set up (and the `jellyfin_login` operation); Wi-Fi setup stays.
+
 ## 1.7.1 (Velarium fork)
 
 * Fix: the page never connected when opened from the QR code Velarium shows while Remote Touchpad is already running (that address carries the secret as `?secret=...`, the page only read `#...`). Both forms work now.

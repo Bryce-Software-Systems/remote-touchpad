@@ -213,7 +213,6 @@ func TestSanitizeCoversTheNewOperationsAndRejectsMalformedFields(t *testing.T) {
 		{"op": "dvr_channels"}, {"op": "dvr_channels", "q": "cbc"},
 		{"op": "dvr_programs", "streamId": "10"}, {"op": "dvr_schedule", "streamId": "10", "startTs": 1.8e9},
 		{"op": "wifi_connect", "ssid": "Home", "password": "hunter2hunter2"}, {"op": "wifi_connect", "ssid": "Open"},
-		{"op": "jellyfin_login", "server": "http://jf.local:8096", "username": "alice", "password": "pw"},
 	}
 	for _, raw := range good {
 		if _, _, err := sanitizeVelariumRequest(raw); err != nil {
@@ -231,8 +230,7 @@ func TestSanitizeCoversTheNewOperationsAndRejectsMalformedFields(t *testing.T) {
 		{"op": "dvr_cancel", "id": "../../etc"}, {"op": "dvr_delete", "id": 5.0}, {"op": "dvr_cancel", "id": "ABCDEF012345"},
 		{"op": "dvr_programs", "streamId": "1 2"}, {"op": "dvr_schedule", "streamId": "10"},
 		{"op": "wifi_connect"}, {"op": "wifi_connect", "ssid": "x", "password": strings.Repeat("p", 257)},
-		{"op": "jellyfin_login", "server": "x", "username": "a", "password": strings.Repeat("p", 257)},
-		{"op": "jellyfin_login", "server": "x"},
+		{"op": "jellyfin_login", "server": "http://jf.local:8096", "username": "alice", "password": "pw"}, // removed
 	}
 	for _, raw := range bad {
 		if _, _, err := sanitizeVelariumRequest(raw); err == nil {

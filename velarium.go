@@ -107,10 +107,6 @@ var velariumOps = map[string]velariumOp{
 	"wifi_connect": {[]velariumField{
 		{name: "ssid", kind: "string", required: true, max: 64},
 		{name: "password", kind: "string", max: 256}}, 70 * time.Second},
-	"jellyfin_login": {[]velariumField{
-		{name: "server", kind: "string", required: true, max: 300},
-		{name: "username", kind: "string", required: true, max: 100},
-		{name: "password", kind: "string", max: 256}}, 40 * time.Second},
 }
 
 type velariumClient struct {

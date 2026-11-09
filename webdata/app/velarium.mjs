@@ -138,8 +138,4 @@ export default class Velarium {
     wifiConnect(ssid, password) {
         return this.#call({op: "wifi_connect", ssid, password}, 70000);
     }
-
-    jellyfinLogin(server, username, password) {
-        return this.#call({op: "jellyfin_login", server, username, password}, 40000);
-    }
 }

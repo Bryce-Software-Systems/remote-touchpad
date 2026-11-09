@@ -111,12 +111,6 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   await page.waitForFunction(() => /password was not accepted/.test(document.querySelector('#toast').textContent), null, { timeout: 6000 });
   result.wifiError = await page.textContent('#toast');
   await shot('setup');
-  await page.fill('#jf-server', 'jellyfin.local:8096');
-  await page.fill('#jf-user', 'alice');
-  await page.fill('#jf-password', 'pw');
-  await page.click('#jf-go');
-  await page.waitForFunction(() => /Signed in as alice/.test(document.querySelector('#jf-status').textContent), null, { timeout: 6000 });
-  result.jellyfinStatus = await page.textContent('#jf-status');
 
   // ---- automatic reconnect (no button)
   server.kill();

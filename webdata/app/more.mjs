@@ -266,10 +266,6 @@ export default class More {
             this.#connectWifi();
         });
         $("#wifi-cancel").addEventListener("click", () => $("#wifi-form").classList.add("hidden"));
-        $("#jf-form").addEventListener("submit", (event) => {
-            event.preventDefault();
-            this.#signIn();
-        });
     }
 
     async #refreshSetup() {
@@ -279,11 +275,6 @@ export default class More {
             $("#wifi-status").textContent = !wifi.available ? "Network tools aren't available on this box."
                 : wifi.connection ? `Connected to ${wifi.connection}${wifi.internet === "full" ? " · internet OK" : wifi.internet === "limited" || wifi.internet === "none" ? " · no internet" : ""}`
                 : "Not connected to a network.";
-            const jf = status.jellyfin || {};
-            $("#jf-status").textContent = jf.signedIn ? `Signed in${jf.user ? ` as ${jf.user}` : ""}${jf.server ? ` on ${jf.server}` : ""}` : "Not signed in to Cinema.";
-            if (jf.server && !$("#jf-server").value) {
-                $("#jf-server").value = jf.server;
-            }
         } catch (error) {
             $("#wifi-status").textContent = `Couldn't read the box's status (${error.message}).`;
         }
@@ -332,20 +323,6 @@ export default class More {
             $("#wifi-password").value = "";
             form.classList.add("hidden");
             this.#toast(`Connected to ${form.dataset.ssid}`);
-            this.#refreshSetup();
-        } catch (error) {
-            this.#toast(error.message);
-        }
-        this.#busy(button, false, "");
-    }
-
-    async #signIn() {
-        const button = $("#jf-go");
-        this.#busy(button, true, "Signing in…");
-        try {
-            await this.#velarium.jellyfinLogin($("#jf-server").value, $("#jf-user").value, $("#jf-password").value);
-            $("#jf-password").value = "";
-            this.#toast("Signed in to Cinema");
             this.#refreshSetup();
         } catch (error) {
             this.#toast(error.message);
