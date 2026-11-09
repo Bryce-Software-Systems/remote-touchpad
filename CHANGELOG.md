@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.3 (Velarium fork)
+
+* **Set up** is now three tabs: Wi-Fi (status card, signal bars), **Bluetooth** (scan, pair, connect, disconnect, forget) and **Settings** (the TV's Configuration editor: switches, colour swatches, pills, menus; saved at once, "Apply now" restarts the launcher).
+* New operations `bt_list`, `bt_action`, `config_get`, `config_set`, `config_apply` (whitelisted with type and size checks).
+
+## 1.7.2 (Velarium fork)
+
+* Removed the Cinema server/sign-in form from More > Set up (and the `jellyfin_login` operation); Wi-Fi setup stays.
+
 ## 1.7.1 (Velarium fork)
 
 * Fix: the page never connected when opened from the QR code Velarium shows while Remote Touchpad is already running (that address carries the secret as `?secret=...`, the page only read `#...`). Both forms work now.

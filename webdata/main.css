@@ -400,3 +400,72 @@ h3 { margin: 6px 0 0; font-size: 1rem; }
 .rec-main .rec-error { color: #ffb3bd; }
 .rec-actions { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
 .program { grid-template-columns: 1fr auto; }
+
+/* ---------- set up: status cards, devices, settings ---------- */
+.segmented.three { grid-template-columns: repeat(3, 1fr); }
+.segmented button { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem; }
+.segmented button .ico { width: 18px; height: 18px; }
+.pane { display: grid; gap: 12px; align-content: start; }
+.status-card { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 20px; border: 1px solid var(--line);
+    background: radial-gradient(240px 120px at 0% 0%, rgba(18, 168, 255, 0.28), transparent 70%), linear-gradient(180deg, var(--surface-2), var(--surface)); }
+.status-icon { display: grid; place-items: center; flex: none; width: 52px; height: 52px; border-radius: 16px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-2)); box-shadow: 0 6px 18px rgba(18, 168, 255, 0.35); }
+.status-icon .ico { width: 26px; height: 26px; color: #fff; }
+.status-text { display: grid; gap: 2px; min-width: 0; }
+.status-text strong { font-size: 1.1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status-text em { font-style: normal; color: var(--muted); font-size: 0.86rem; line-height: 1.35; }
+#wifi-scan, #bt-scan { display: flex; align-items: center; justify-content: center; gap: 8px; }
+#bt-scan .ico { width: 20px; height: 20px; }
+
+.device { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 68px; padding: 10px 14px; text-align: left; justify-content: flex-start;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 18px; }
+.device.connected { border-color: var(--accent); background: linear-gradient(180deg, rgba(18, 168, 255, 0.16), var(--surface)); }
+.device-icon { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 13px; background: var(--bg-2); color: var(--accent); }
+.device-icon .ico { width: 22px; height: 22px; }
+.device-main { display: grid; gap: 5px; flex: 1; min-width: 0; }
+.device-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip.ok { color: #aef0c8; border-color: rgba(80, 220, 140, 0.55); background: rgba(80, 220, 140, 0.12); }
+.device { flex-wrap: wrap; }
+.device-actions { display: flex; gap: 8px; flex: 1 0 100%; padding-left: 54px; }
+.device-actions button { flex: 1; max-width: 160px; }
+.device .ico { width: 20px; height: 20px; flex: none; }
+.device.network > .ico { color: var(--muted); }
+.signal { display: flex; align-items: flex-end; gap: 3px; flex: none; width: 34px; height: 26px; }
+.signal i { flex: 1; border-radius: 2px; background: var(--line); }
+.signal i:nth-child(1) { height: 30%; } .signal i:nth-child(2) { height: 52%; } .signal i:nth-child(3) { height: 76%; } .signal i:nth-child(4) { height: 100%; }
+.signal i.on { background: var(--accent); }
+
+.settings-list { display: grid; gap: 12px; padding-bottom: 80px; }
+.section { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+.section.open { border-color: var(--accent-2); }
+.section-head { width: 100%; justify-content: flex-start; gap: 10px; min-height: 60px; padding: 0 16px; border: none; border-radius: 0; background: transparent; text-align: left; }
+.section-head strong { flex: 1; font-size: 1.02rem; }
+.section-head .ico { width: 20px; height: 20px; color: var(--muted); transition: transform 0.2s; }
+.section.open .section-head .ico { transform: rotate(180deg); }
+.section-body { display: grid; border-top: 1px solid var(--line); }
+.opt { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 16px; }
+.opt + .opt { border-top: 1px solid rgba(42, 65, 112, 0.6); }
+.opt.stacked { flex-direction: column; align-items: stretch; gap: 8px; }
+.opt-label { display: grid; gap: 2px; min-width: 0; }
+.opt-label strong { font-size: 0.97rem; font-weight: 600; }
+.opt-label em { font-style: normal; color: var(--muted); font-size: 0.8rem; line-height: 1.3; }
+.toggle { position: relative; flex: none; width: 56px; min-height: 32px; height: 32px; padding: 0; border-radius: 999px; background: var(--bg-2); border: 1px solid var(--line); transition: background 0.2s; }
+.toggle .knob { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #d7e3ff; transition: transform 0.2s; }
+.toggle.on { background: linear-gradient(180deg, var(--accent), var(--accent-2)); border-color: transparent; }
+.toggle.on .knob { transform: translateX(24px); background: #fff; }
+.pills { display: flex; gap: 4px; padding: 3px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; flex: none; }
+.pills button { min-height: 36px; padding: 0 12px; border: none; background: transparent; color: var(--muted); font-size: 0.85rem; font-weight: 700; border-radius: 9px; }
+.pills button.active { background: var(--accent-2); color: #fff; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; max-width: 60%; }
+.swatch { display: grid; place-items: center; width: 34px; min-height: 34px; height: 34px; padding: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.25); background: var(--surface-2); }
+.swatch.selected { border-color: #fff; box-shadow: 0 0 0 3px var(--accent); }
+.swatch .ico { width: 16px; height: 16px; color: #fff; filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8)); }
+.textbox input { width: 100%; min-height: 44px !important; border-radius: 12px !important; font-size: 0.95rem !important; }
+.opt > select { flex: none; max-width: 55%; }
+.apply-bar { position: fixed; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 14px; border-radius: 18px; background: var(--surface-2); border: 1px solid var(--accent); box-shadow: 0 10px 34px rgba(0, 0, 0, 0.5); }
+.apply-bar span { display: grid; gap: 1px; }
+.apply-bar em { font-style: normal; color: var(--muted); font-size: 0.82rem; }
+
+:has(> .apply-bar:not(.hidden)) ~ .toast, body:has(.apply-bar:not(.hidden)) .toast { bottom: calc(150px + env(safe-area-inset-bottom)); }

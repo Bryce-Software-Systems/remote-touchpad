@@ -69,6 +69,8 @@ var (
 	openKinds       = []string{"cinema", "channel", "programme", "recording", "youtube"}
 	powerModes      = []string{"shutdown", "restart", "sleep"}
 	noFields        = []velariumField{}
+	macPattern      = regexp.MustCompile(`^(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$`)
+	btActions       = []string{"pair", "connect", "disconnect", "forget"}
 	searchQueryOnly = []velariumField{{name: "q", kind: "string", max: 80}}
 )
 
@@ -104,13 +106,19 @@ var velariumOps = map[string]velariumOp{
 	"dvr_schedule": {[]velariumField{
 		{name: "streamId", kind: "string", required: true, pattern: streamPattern},
 		{name: "startTs", kind: "number", required: true, lo: 0, hi: 1e11}}, velariumCallTimeout},
+	"bt_list": {noFields, 30 * time.Second},
+	"bt_action": {[]velariumField{
+		{name: "mac", kind: "string", required: true, pattern: macPattern},
+		{name: "action", kind: "string", required: true, enum: btActions}}, 70 * time.Second},
+	"config_get": {noFields, velariumCallTimeout},
+	"config_set": {[]velariumField{
+		{name: "section", kind: "string", required: true, max: 80},
+		{name: "key", kind: "string", required: true, max: 80},
+		{name: "value", kind: "string", max: 300}}, velariumCallTimeout},
+	"config_apply": {noFields, velariumCallTimeout},
 	"wifi_connect": {[]velariumField{
 		{name: "ssid", kind: "string", required: true, max: 64},
 		{name: "password", kind: "string", max: 256}}, 70 * time.Second},
-	"jellyfin_login": {[]velariumField{
-		{name: "server", kind: "string", required: true, max: 300},
-		{name: "username", kind: "string", required: true, max: 100},
-		{name: "password", kind: "string", max: 256}}, 40 * time.Second},
 }
 
 type velariumClient struct {

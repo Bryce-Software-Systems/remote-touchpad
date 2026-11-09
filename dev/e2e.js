@@ -102,21 +102,27 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   // ---- more: setup
   await page.click('[data-more-back]:visible');
   await page.click('[data-more=setup]');
-  await page.waitForFunction(() => /Connected to/.test(document.querySelector('#wifi-status').textContent));
+  await page.waitForFunction(() => /Connected/.test(document.querySelector('#wifi-status-sub').textContent));
   await page.click('#wifi-scan');
-  await page.waitForSelector('#wifi-list .result');
-  await page.click('#wifi-list .result:has-text("Neighbour")');
+  await page.waitForSelector('#wifi-list .device');
+  await page.click('#wifi-list .device:has-text("Neighbour")');
   await page.fill('#wifi-password', 'wrong-password');
   await page.click('#wifi-connect');
   await page.waitForFunction(() => /password was not accepted/.test(document.querySelector('#toast').textContent), null, { timeout: 6000 });
   result.wifiError = await page.textContent('#toast');
   await shot('setup');
-  await page.fill('#jf-server', 'jellyfin.local:8096');
-  await page.fill('#jf-user', 'alice');
-  await page.fill('#jf-password', 'pw');
-  await page.click('#jf-go');
-  await page.waitForFunction(() => /Signed in as alice/.test(document.querySelector('#jf-status').textContent), null, { timeout: 6000 });
-  result.jellyfinStatus = await page.textContent('#jf-status');
+  await page.click('[data-setup-tab=bluetooth]');
+  await page.waitForSelector('#bt-list .device');
+  await page.click('#bt-list .device:has-text("JBL") button');
+  await page.waitForFunction(() => /Paired with JBL/.test(document.querySelector('#toast').textContent), null, { timeout: 6000 });
+  result.btDevices = await page.$$eval('#bt-list .device', n => n.map(x => x.innerText.replace(/\n/g, ' | ')));
+  await shot('bluetooth');
+  await page.click('[data-setup-tab=settings]');
+  await page.waitForSelector('.section.open .toggle');
+  await page.click('.section.open .toggle >> nth=0');
+  await page.waitForSelector('#settings-apply:not(.hidden)');
+  result.settingsToggled = await page.$eval('.section.open .toggle >> nth=0', n => n.getAttribute('aria-checked'));
+  await shot('settings');
 
   // ---- automatic reconnect (no button)
   server.kill();
