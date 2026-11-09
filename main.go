@@ -38,6 +38,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -47,7 +48,7 @@ const (
 	authenticationRateBurst int           = 10
 	challengeLength         int           = 8
 	defaultBind             string        = ":0"
-	version                 string        = "1.7.3"
+	version                 string        = "1.7.4"
 	prettyAppName           string        = "Remote Touchpad"
 )
 
@@ -58,6 +59,27 @@ type config struct {
 	MoveSpeed        float64 `json:"moveSpeed"`
 	MouseScrollSpeed float64 `json:"mouseScrollSpeed"`
 	MouseMoveSpeed   float64 `json:"mouseMoveSpeed"`
+}
+
+// keyboardTextMax bounds what one typed-text message may carry.
+const keyboardTextMax = 500
+
+// sanitizeKeyboardText keeps only what a person types into a text box: letters, digits, punctuation, symbols and the
+// space bar. Control characters (Enter, Tab, Escape, ...), format and private-use characters and anything else that
+// could act as a command rather than text are dropped; keys such as Enter have their own buttons.
+func sanitizeKeyboardText(text string) string {
+	var b strings.Builder
+	count := 0
+	for _, r := range text {
+		if count >= keyboardTextMax {
+			break
+		}
+		if r == ' ' || unicode.IsLetter(r) || unicode.IsNumber(r) || unicode.IsPunct(r) || unicode.IsSymbol(r) || unicode.Is(unicode.M, r) {
+			b.WriteRune(r)
+			count++
+		}
+	}
+	return b.String()
 }
 
 func processCommand(controller inputcontrol.Controller, command string) error {
@@ -71,6 +93,10 @@ func processCommand(controller inputcontrol.Controller, command string) error {
 		text := command[1:]
 		if !utf8.ValidString(text) {
 			return errors.New("invalid utf-8")
+		}
+		text = sanitizeKeyboardText(text)
+		if text == "" {
+			return nil
 		}
 		return controller.KeyboardText(text)
 	}
