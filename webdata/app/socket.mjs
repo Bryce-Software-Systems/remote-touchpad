@@ -26,28 +26,79 @@ const challengeResponse = (message, secret) => {
     return btoa(shaObj.getHMAC("BYTES"));
 };
 
-const REQUEST_TIMEOUT = 8000; // milliseconds
+const DEFAULT_REQUEST_TIMEOUT = 8000; // milliseconds
+const RETRY_DELAYS = [400, 800, 1500, 3000, 5000]; // then every 5 seconds
 
+// A websocket to the Remote Touchpad server that reconnects by itself: when the connection drops (the box restarted,
+// Wi-Fi blipped, the phone was locked) it keeps trying -- immediately when the page becomes visible again or the
+// network returns -- and tells the UI via "close" (connection lost) and "config" (connected again).
 export default class Socket extends EventTarget {
+    #url;
     #secret;
-    #authenticated;
+    #ws = null;
+    #authenticated = false;
     #configured = false;
-    #ws;
+    #attempt = 0;
+    #retryTimer = null;
     #nextRequestId = 1;
     #pending = new Map();
 
     constructor(url, secret) {
         super();
+        this.#url = url;
         this.#secret = secret;
-        this.#authenticated = false;
-        this.#ws = new WebSocket(url);
-        this.#ws.addEventListener("message", this.#handle_ws_message.bind(this));
-        this.#ws.addEventListener("close", this.#handle_ws_close.bind(this));
+        window.addEventListener("online", () => this.#retryNow());
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+                this.#retryNow();
+            }
+        });
+        this.#connect();
     }
 
-    #handle_ws_message(event) {
+    get connected() {
+        return this.#configured && this.#ws?.readyState === WebSocket.OPEN;
+    }
+
+    #connect() {
+        if (this.#ws && this.#ws.readyState <= WebSocket.OPEN) {
+            return;
+        }
+        this.#authenticated = false;
+        this.#configured = false;
+        let ws;
+        try {
+            ws = new WebSocket(this.#url);
+        } catch (e) {
+            this.#scheduleRetry();
+            return;
+        }
+        this.#ws = ws;
+        ws.addEventListener("message", (event) => this.#handleMessage(ws, event));
+        ws.addEventListener("close", () => this.#handleClose(ws));
+        ws.addEventListener("error", () => {}); // always followed by "close"
+    }
+
+    #scheduleRetry() {
+        clearTimeout(this.#retryTimer);
+        const delay = RETRY_DELAYS[Math.min(this.#attempt, RETRY_DELAYS.length - 1)];
+        this.#attempt += 1;
+        this.#retryTimer = setTimeout(() => this.#connect(), delay);
+    }
+
+    #retryNow() {
+        if (!this.#ws || this.#ws.readyState > WebSocket.OPEN) {
+            clearTimeout(this.#retryTimer);
+            this.#connect();
+        }
+    }
+
+    #handleMessage(ws, event) {
+        if (ws !== this.#ws) {
+            return;
+        }
         if (!this.#authenticated) {
-            this.#ws.send(challengeResponse(event.data, this.#secret));
+            ws.send(challengeResponse(event.data, this.#secret));
             this.#authenticated = true;
             return;
         }
@@ -55,11 +106,12 @@ export default class Socket extends EventTarget {
         try {
             message = JSON.parse(event.data);
         } catch (e) {
-            this.#ws.close();
+            ws.close();
             throw (e);
         }
         if (!this.#configured) {
             this.#configured = true;
+            this.#attempt = 0;
             this.dispatchEvent(new CustomEvent("config", {detail: message}));
             return;
         }
@@ -72,27 +124,41 @@ export default class Socket extends EventTarget {
         }
     }
 
-    #handle_ws_close() {
+    #handleClose(ws) {
+        if (ws !== this.#ws) {
+            return;
+        }
+        this.#ws = null;
+        this.#configured = false;
         for (const [, pending] of this.#pending) {
             clearTimeout(pending.timer);
             pending.reject(new Error("Disconnected"));
         }
         this.#pending.clear();
         this.dispatchEvent(new CustomEvent("close"));
+        this.#scheduleRetry();
     }
 
+    // Input events are dropped while disconnected (the UI shows the reconnecting screen); they are never queued, so a
+    // stale key press cannot fire minutes later.
     send(message) {
-        this.#ws.send(message);
+        if (this.connected) {
+            this.#ws.send(message);
+        }
     }
 
     // Sends a Velarium request ("v" + JSON) and resolves with the launcher's reply.
-    request(payload) {
+    request(payload, timeout = DEFAULT_REQUEST_TIMEOUT) {
         return new Promise((resolve, reject) => {
+            if (!this.connected) {
+                reject(new Error("Not connected"));
+                return;
+            }
             const id = this.#nextRequestId++;
             const timer = setTimeout(() => {
                 this.#pending.delete(id);
                 reject(new Error("The TV box did not answer in time"));
-            }, REQUEST_TIMEOUT);
+            }, timeout);
             this.#pending.set(id, {resolve, reject, timer});
             try {
                 this.#ws.send("v" + JSON.stringify({...payload, id}));

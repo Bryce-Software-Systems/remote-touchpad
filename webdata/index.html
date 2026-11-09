@@ -35,19 +35,19 @@
     <symbol id="i-enter" viewBox="0 0 24 24"><path d="M20 5v8a3 3 0 0 1-3 3H5M9 12l-4 4 4 4"/></symbol>
     <symbol id="i-fullscreen" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></symbol>
+    <symbol id="i-cast" viewBox="0 0 24 24"><path d="M3 8V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M3 12a8 8 0 0 1 8 8M3 16a4 4 0 0 1 4 4M3 20h.01"/></symbol>
+    <symbol id="i-record" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a10 10 0 0 1 13 0M8.5 16a6 6 0 0 1 7 0"/><path d="M12 19.5h.01"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
     <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
 </svg>
 
 <div id="opening" class="overlay">
     <noscript><p>JavaScript is required!</p></noscript>
     <div class="spinner" aria-hidden="true"></div>
-    <p>Connecting to your TV…</p>
-</div>
-
-<div id="closed" class="overlay hidden">
-    <p>Disconnected</p>
-    <p class="sub">The remote lost its connection to the TV box.</p>
-    <button class="primary" onclick="location.reload()">Reconnect</button>
+    <p id="overlay-text">Connecting to your TV…</p>
+    <p id="overlay-sub" class="sub hidden">Looking for your TV box. This will reconnect by itself.</p>
 </div>
 
 <header class="topbar">
@@ -80,15 +80,43 @@
         </div>
         <label class="search">
             <svg class="ico"><use href="#i-search"/></svg>
-            <input id="app-search" type="search" placeholder="Search apps" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+            <input id="app-search" type="search" placeholder="Search apps, movies, channels, YouTube" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
         </label>
         <nav id="crumbs" class="crumbs hidden" aria-label="Menu path"></nav>
         <div id="home-message" class="message hidden"></div>
+        <div id="results" class="results hidden"></div>
         <div id="tiles" class="tiles" role="list"></div>
     </section>
 
     <!-- REMOTE: D-pad, back/home, volume and media -->
     <section id="view-remote" class="view keyboard-input" data-tab="remote">
+        <section id="now-playing" class="np hidden" aria-label="Now playing">
+            <div class="np-head">
+                <div class="np-text">
+                    <strong id="np-title"></strong>
+                    <span id="np-sub" class="hidden"></span>
+                </div>
+                <span id="np-kind" class="chip"></span>
+                <span id="np-buffering" class="chip hidden">Buffering…</span>
+            </div>
+            <div class="np-seek">
+                <span id="np-pos">0:00</span>
+                <input id="np-range" type="range" min="0" max="1000" value="0" aria-label="Playback position">
+                <span id="np-dur"></span>
+            </div>
+            <div class="np-controls">
+                <button id="np-prev" aria-label="Previous"><svg class="ico"><use href="#i-prev"/></svg></button>
+                <button id="np-back" aria-label="Back 10 seconds">−10</button>
+                <button id="np-toggle" class="primary" aria-label="Pause"><svg class="ico i-pause"><use href="#i-playpause"/></svg></button>
+                <button id="np-forward" aria-label="Forward 10 seconds">+10</button>
+                <button id="np-next" aria-label="Next"><svg class="ico"><use href="#i-next"/></svg></button>
+            </div>
+            <div class="np-tracks">
+                <select id="np-audio" class="hidden"></select>
+                <select id="np-subs" class="hidden"></select>
+                <button id="np-stop" class="small danger" aria-label="Stop playback"><svg class="ico"><use href="#i-stop"/></svg>Stop</button>
+            </div>
+        </section>
         <div class="dpad" role="group" aria-label="Directional pad">
             <button class="key up" data-key="UP" data-repeat aria-label="Up"><svg class="ico"><use href="#i-up"/></svg></button>
             <button class="key left" data-key="LEFT" data-repeat aria-label="Left"><svg class="ico"><use href="#i-left"/></svg></button>
@@ -104,11 +132,6 @@
             <button class="key" data-key="MEDIA_PREV_TRACK" aria-label="Previous"><svg class="ico"><use href="#i-prev"/></svg></button>
             <button class="key" data-key="MEDIA_PLAY_PAUSE" aria-label="Play or pause"><svg class="ico"><use href="#i-playpause"/></svg></button>
             <button class="key" data-key="MEDIA_NEXT_TRACK" aria-label="Next"><svg class="ico"><use href="#i-next"/></svg></button>
-        </div>
-        <div class="row three volume">
-            <button class="key" data-key="VOLUME_DOWN" data-repeat aria-label="Volume down"><svg class="ico"><use href="#i-vol-down"/></svg></button>
-            <button class="key" data-key="VOLUME_MUTE" aria-label="Mute"><svg class="ico"><use href="#i-mute"/></svg></button>
-            <button class="key" data-key="VOLUME_UP" data-repeat aria-label="Volume up"><svg class="ico"><use href="#i-vol-up"/></svg></button>
         </div>
     </section>
 
@@ -146,13 +169,89 @@
             <button class="key" data-key="END">End</button>
         </div>
     </section>
+
+    <!-- MORE: cast a link, recordings, set up -->
+    <section id="view-more" class="view" data-tab="more">
+        <div id="more-menu" class="more-menu">
+            <button class="more-card" data-more="cast"><svg class="ico"><use href="#i-cast"/></svg><span><strong>Cast a link</strong><em>Send a web page or YouTube video to the TV</em></span></button>
+            <button class="more-card" data-more="dvr"><svg class="ico"><use href="#i-record"/></svg><span><strong>Recordings</strong><em>Schedule Live TV, play or delete recordings</em></span></button>
+            <button class="more-card" data-more="setup"><svg class="ico"><use href="#i-wifi"/></svg><span><strong>Set up</strong><em>Wi-Fi and Cinema sign-in, typed on your phone</em></span></button>
+        </div>
+
+        <div data-page="cast" class="page hidden">
+            <button class="back" data-more-back><svg class="ico"><use href="#i-chevron-left"/></svg>More</button>
+            <h2>Cast a link</h2>
+            <p class="tip">Paste a web address. YouTube links open in YouTube on the TV; everything else opens in the browser.</p>
+            <label class="field"><input id="cast-url" type="url" inputmode="url" placeholder="https://" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+            <div class="row two">
+                <button id="cast-paste" class="key">Paste</button>
+                <button id="cast-go" class="primary">Cast to TV</button>
+            </div>
+        </div>
+
+        <div data-page="dvr" class="page hidden">
+            <button class="back" data-more-back><svg class="ico"><use href="#i-chevron-left"/></svg>More</button>
+            <h2>Recordings</h2>
+            <div class="segmented">
+                <button data-dvr-mode="recordings" class="active">Recordings</button>
+                <button data-dvr-mode="schedule">Schedule</button>
+            </div>
+            <div id="dvr-recordings">
+                <p id="dvr-free" class="tip"></p>
+                <div id="dvr-list" class="list"></div>
+            </div>
+            <div id="dvr-schedule" class="hidden">
+                <div id="dvr-channel-pane">
+                    <label class="search"><svg class="ico"><use href="#i-search"/></svg><input id="dvr-channel-search" type="search" placeholder="Find a channel" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+                    <div id="dvr-channels" class="list"></div>
+                </div>
+                <div id="dvr-programs-pane" class="hidden">
+                    <button id="dvr-programs-back" class="back"><svg class="ico"><use href="#i-chevron-left"/></svg>Channels</button>
+                    <h3 id="dvr-programs-title"></h3>
+                    <div id="dvr-programs" class="list"></div>
+                </div>
+            </div>
+        </div>
+
+        <div data-page="setup" class="page hidden">
+            <button class="back" data-more-back><svg class="ico"><use href="#i-chevron-left"/></svg>More</button>
+            <h2>Set up</h2>
+            <p class="warning">Passwords you type here travel over your home network without encryption. Only use this on a network you trust.</p>
+            <h3>Wi-Fi</h3>
+            <p id="wifi-status" class="tip">Checking…</p>
+            <button id="wifi-scan" class="key">Scan for networks</button>
+            <div id="wifi-list" class="list"></div>
+            <form id="wifi-form" class="card hidden">
+                <strong id="wifi-form-title"></strong>
+                <label id="wifi-password-row" class="field"><input id="wifi-password" type="password" placeholder="Wi-Fi password" autocomplete="off"></label>
+                <div class="row two">
+                    <button type="button" id="wifi-cancel" class="key">Cancel</button>
+                    <button type="submit" id="wifi-connect" class="primary">Connect</button>
+                </div>
+            </form>
+            <h3>Cinema</h3>
+            <p id="jf-status" class="tip">Checking…</p>
+            <form id="jf-form" class="card">
+                <label class="field"><input id="jf-server" type="url" inputmode="url" placeholder="Server address (https://…)" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+                <label class="field"><input id="jf-user" type="text" placeholder="Username" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+                <label class="field"><input id="jf-password" type="password" placeholder="Password" autocomplete="off"></label>
+                <button type="submit" id="jf-go" class="primary">Sign in</button>
+            </form>
+        </div>
+    </section>
 </main>
+
+<button id="mini-np" class="mini-np hidden" aria-label="Now playing: open the remote">
+    <span id="mini-np-title"></span>
+    <span id="mini-np-toggle" class="mini-toggle" role="button" aria-label="Pause"><svg class="ico i-pause"><use href="#i-playpause"/></svg></span>
+</button>
 
 <nav class="tabbar" aria-label="Sections">
     <button data-go="home" class="tab"><svg class="ico"><use href="#i-folder"/></svg><span>Apps</span></button>
     <button data-go="remote" class="tab"><svg class="ico"><use href="#i-remote"/></svg><span>Remote</span></button>
     <button data-go="pad" class="tab"><svg class="ico"><use href="#i-pad"/></svg><span>Touchpad</span></button>
     <button data-go="keys" class="tab"><svg class="ico"><use href="#i-keyboard"/></svg><span>Keyboard</span></button>
+    <button data-go="more" class="tab"><svg class="ico"><use href="#i-more"/></svg><span>More</span></button>
 </nav>
 
 <div id="sheet" class="sheet hidden" role="dialog" aria-modal="true" aria-label="Power options">

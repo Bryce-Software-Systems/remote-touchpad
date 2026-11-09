@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.0 (Velarium fork)
+
+* Now Playing card (seek bar, transport controls, audio and subtitle pickers) and a mini bar on the other screens.
+* Universal search from the Apps screen (apps, Cinema, Live TV, recordings, YouTube); tapping a result opens it on the TV.
+* New **More** screen: cast a link, DVR (recordings and scheduling), and first-run setup (Wi-Fi, Cinema sign-in).
+* The connection now reconnects automatically (no "Reconnect" button); removed the volume buttons from the Remote.
+* The Go server whitelists each operation's fields with type and size checks and per-operation timeouts.
+
 ## 1.6.0 (Velarium fork)
 
 * Complete redesign of the web UI: fixed top bar with Home and Power, four screens (Apps, Remote, Touchpad,

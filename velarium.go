@@ -19,9 +19,12 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"math"
 	"net"
 	"os"
 	"path/filepath"
+	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -37,16 +40,78 @@ import (
 
 const (
 	velariumDialTimeout  = 500 * time.Millisecond
-	velariumCallTimeout  = 4 * time.Second
+	velariumCallTimeout  = 6 * time.Second
 	velariumMaxReplySize = 4 << 20
 	velariumIconSize     = 128
 )
 
-var velariumOps = map[string]bool{
-	"ping": true, "menus": true, "launch": true, "home": true, "status": true, "power": true,
+// A request field: the type decides how it is checked, so nothing the phone sends reaches the launcher unvalidated.
+type velariumField struct {
+	name     string
+	kind     string // "string", "int", "number" or "scalar" (string, number or null)
+	required bool
+	max      int            // strings: maximum length in bytes
+	lo, hi   float64        // numbers: inclusive bounds
+	enum     []string       // strings: allowed values (when set)
+	pattern  *regexp.Regexp // strings: must match (when set)
 }
 
-var velariumPowerModes = map[string]bool{"shutdown": true, "restart": true, "sleep": true}
+type velariumOp struct {
+	fields  []velariumField
+	timeout time.Duration
+}
+
+var (
+	idPattern       = regexp.MustCompile(`^[0-9a-f]{12}$`)
+	streamPattern   = regexp.MustCompile(`^\d{1,12}$`)
+	appPattern      = regexp.MustCompile(`^[a-z_][a-z0-9_]{0,31}$`)
+	playerActions   = []string{"toggle", "play", "pause", "seek", "seekto", "next", "prev", "stop", "audio", "subtitle"}
+	openKinds       = []string{"cinema", "channel", "programme", "recording", "youtube"}
+	powerModes      = []string{"shutdown", "restart", "sleep"}
+	noFields        = []velariumField{}
+	searchQueryOnly = []velariumField{{name: "q", kind: "string", max: 80}}
+)
+
+// velariumOps is the complete list of operations the phone may ask for, with each one's fields and how long the
+// launcher may take. Slow ones (Wi-Fi, sign-in, search) get longer than a menu fetch.
+var velariumOps = map[string]velariumOp{
+	"ping":         {noFields, velariumCallTimeout},
+	"menus":        {noFields, velariumCallTimeout},
+	"home":         {noFields, velariumCallTimeout},
+	"status":       {noFields, velariumCallTimeout},
+	"nowplaying":   {noFields, velariumCallTimeout},
+	"dvr":          {noFields, velariumCallTimeout},
+	"setup_status": {noFields, 20 * time.Second},
+	"wifi_list":    {noFields, 45 * time.Second},
+	"launch": {[]velariumField{
+		{name: "menu", kind: "string", required: true, max: 64},
+		{name: "index", kind: "int", required: true, lo: 0, hi: 1000}}, velariumCallTimeout},
+	"power": {[]velariumField{{name: "mode", kind: "string", required: true, enum: powerModes}}, velariumCallTimeout},
+	"player": {[]velariumField{
+		{name: "app", kind: "string", required: true, pattern: appPattern},
+		{name: "action", kind: "string", required: true, enum: playerActions},
+		{name: "value", kind: "scalar", max: 80}}, velariumCallTimeout},
+	"search": {[]velariumField{{name: "q", kind: "string", required: true, max: 80}}, 25 * time.Second},
+	"open": {[]velariumField{
+		{name: "kind", kind: "string", required: true, enum: openKinds},
+		{name: "ref", kind: "string", required: true, max: 64},
+		{name: "at", kind: "number", lo: 0, hi: 1e11}}, velariumCallTimeout},
+	"cast":         {[]velariumField{{name: "url", kind: "string", required: true, max: 2000}}, velariumCallTimeout},
+	"dvr_cancel":   {[]velariumField{{name: "id", kind: "string", required: true, pattern: idPattern}}, velariumCallTimeout},
+	"dvr_delete":   {[]velariumField{{name: "id", kind: "string", required: true, pattern: idPattern}}, velariumCallTimeout},
+	"dvr_channels": {searchQueryOnly, velariumCallTimeout},
+	"dvr_programs": {[]velariumField{{name: "streamId", kind: "string", required: true, pattern: streamPattern}}, velariumCallTimeout},
+	"dvr_schedule": {[]velariumField{
+		{name: "streamId", kind: "string", required: true, pattern: streamPattern},
+		{name: "startTs", kind: "number", required: true, lo: 0, hi: 1e11}}, velariumCallTimeout},
+	"wifi_connect": {[]velariumField{
+		{name: "ssid", kind: "string", required: true, max: 64},
+		{name: "password", kind: "string", max: 256}}, 70 * time.Second},
+	"jellyfin_login": {[]velariumField{
+		{name: "server", kind: "string", required: true, max: 300},
+		{name: "username", kind: "string", required: true, max: 100},
+		{name: "password", kind: "string", max: 256}}, 40 * time.Second},
+}
 
 type velariumClient struct {
 	socketPath string
@@ -121,39 +186,82 @@ func (c *velariumClient) available() bool {
 	return err == nil && reply["ok"] == true
 }
 
-// sanitize keeps only the fields each operation needs, so the phone cannot make this process forward arbitrary
-// requests to the launcher.
-func sanitizeVelariumRequest(raw map[string]any) (map[string]any, error) {
-	op, _ := raw["op"].(string)
-	if !velariumOps[op] {
-		return nil, fmt.Errorf("unsupported operation %q", op)
-	}
-	request := map[string]any{"op": op}
-	switch op {
-	case "launch":
-		menu, _ := raw["menu"].(string)
-		index, isNumber := raw["index"].(float64)
-		if menu == "" || len(menu) > 64 || !isNumber || index < 0 || index > 1000 || index != float64(int(index)) {
-			return nil, errors.New("launch needs a menu name and an index")
+func checkVelariumField(field velariumField, value any) (any, error) {
+	switch field.kind {
+	case "string":
+		text, ok := value.(string)
+		if !ok || (field.required && text == "") || (field.max > 0 && len(text) > field.max) ||
+			(field.pattern != nil && !field.pattern.MatchString(text)) {
+			return nil, fmt.Errorf("invalid %s", field.name)
 		}
-		request["menu"], request["index"] = menu, int(index)
-	case "power":
-		mode, _ := raw["mode"].(string)
-		if !velariumPowerModes[mode] {
-			return nil, fmt.Errorf("unsupported power mode %q", mode)
+		if len(field.enum) > 0 && !slices.Contains(field.enum, text) {
+			return nil, fmt.Errorf("invalid %s", field.name)
 		}
-		request["mode"] = mode
+		return text, nil
+	case "int":
+		number, ok := value.(float64)
+		if !ok || number != math.Trunc(number) || number < field.lo || number > field.hi {
+			return nil, fmt.Errorf("invalid %s", field.name)
+		}
+		return int(number), nil
+	case "number":
+		number, ok := value.(float64)
+		if !ok || math.IsNaN(number) || math.IsInf(number, 0) || number < field.lo || number > field.hi {
+			return nil, fmt.Errorf("invalid %s", field.name)
+		}
+		return number, nil
+	case "scalar":
+		switch typed := value.(type) {
+		case nil:
+			return nil, nil
+		case string:
+			if len(typed) > field.max {
+				return nil, fmt.Errorf("invalid %s", field.name)
+			}
+			return typed, nil
+		case float64:
+			if math.IsNaN(typed) || math.IsInf(typed, 0) || math.Abs(typed) > 1e9 {
+				return nil, fmt.Errorf("invalid %s", field.name)
+			}
+			return typed, nil
+		}
 	}
-	return request, nil
+	return nil, fmt.Errorf("invalid %s", field.name)
+}
+
+// sanitizeVelariumRequest keeps only the declared fields of a known operation, each validated, so the phone cannot
+// make this process forward anything else to the launcher.
+func sanitizeVelariumRequest(raw map[string]any) (map[string]any, velariumOp, error) {
+	name, _ := raw["op"].(string)
+	op, known := velariumOps[name]
+	if !known {
+		return nil, velariumOp{}, fmt.Errorf("unsupported operation %q", name)
+	}
+	request := map[string]any{"op": name}
+	for _, field := range op.fields {
+		value, present := raw[field.name]
+		if !present || (value == nil && field.kind != "scalar") {
+			if field.required {
+				return nil, velariumOp{}, fmt.Errorf("missing %s", field.name)
+			}
+			continue
+		}
+		checked, err := checkVelariumField(field, value)
+		if err != nil {
+			return nil, velariumOp{}, err
+		}
+		request[field.name] = checked
+	}
+	return request, op, nil
 }
 
 // Call forwards one phone request and returns the launcher's reply; "menus" replies get small inline icons.
 func (c *velariumClient) Call(raw map[string]any) (map[string]any, error) {
-	request, err := sanitizeVelariumRequest(raw)
+	request, op, err := sanitizeVelariumRequest(raw)
 	if err != nil {
 		return nil, err
 	}
-	reply, err := c.roundTrip(request, velariumDialTimeout, velariumCallTimeout)
+	reply, err := c.roundTrip(request, velariumDialTimeout, op.timeout)
 	if err != nil {
 		return nil, err
 	}
