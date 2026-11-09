@@ -25,7 +25,10 @@ import Velarium from "./velarium.mjs";
 const url = new URL("ws", location.href);
 url.protocol = url.protocol == "http:" ? "ws:" : "wss:";
 
-const socket = new Socket(url, window.location.hash.substr(1));
+// The secret travels in the address: "/#SECRET" (what the server prints) or "/?secret=SECRET" (what the Velarium
+// launcher builds for its QR code when Remote Touchpad is already running).
+const secret = window.location.hash.substr(1) || new URLSearchParams(window.location.search).get("secret") || "";
+const socket = new Socket(url, secret);
 const inputController = new InputController(socket);
 const velarium = new Velarium(socket);
 const ui = new UI(inputController, velarium);
@@ -36,8 +39,8 @@ socket.addEventListener("config", (event) => {
     ui.configure(config);
 });
 
-socket.addEventListener("close", () => {
-    ui.close();
+socket.addEventListener("close", (event) => {
+    ui.close(Boolean(event.detail?.rejected));
 });
 
 window.app = {

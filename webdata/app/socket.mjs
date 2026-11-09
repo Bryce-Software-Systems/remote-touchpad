@@ -37,6 +37,7 @@ export default class Socket extends EventTarget {
     #secret;
     #ws = null;
     #authenticated = false;
+    #rejected = 0;            // connections in a row that were closed right after we answered the challenge
     #configured = false;
     #attempt = 0;
     #retryTimer = null;
@@ -112,6 +113,7 @@ export default class Socket extends EventTarget {
         if (!this.#configured) {
             this.#configured = true;
             this.#attempt = 0;
+            this.#rejected = 0;
             this.dispatchEvent(new CustomEvent("config", {detail: message}));
             return;
         }
@@ -129,13 +131,14 @@ export default class Socket extends EventTarget {
             return;
         }
         this.#ws = null;
+        this.#rejected = this.#authenticated && !this.#configured ? this.#rejected + 1 : this.#rejected;
         this.#configured = false;
         for (const [, pending] of this.#pending) {
             clearTimeout(pending.timer);
             pending.reject(new Error("Disconnected"));
         }
         this.#pending.clear();
-        this.dispatchEvent(new CustomEvent("close"));
+        this.dispatchEvent(new CustomEvent("close", {detail: {rejected: this.#rejected >= 2}}));
         this.#scheduleRetry();
     }
 
