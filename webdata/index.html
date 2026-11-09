@@ -155,13 +155,11 @@
 
     <!-- KEYBOARD -->
     <section id="view-keys" class="view" data-tab="keys">
-        <textarea id="text-box" rows="3" placeholder="Type here, then press Send" autocapitalize="sentences" enterkeyhint="send"></textarea>
-        <div class="row three text-actions">
-            <button id="btn-send" class="primary"><svg class="ico"><use href="#i-send"/></svg>Send</button>
+        <textarea id="text-box" rows="3" placeholder="Type here: it appears on the TV as you type" autocapitalize="sentences" enterkeyhint="enter"></textarea>
+        <div class="row text-actions">
             <button id="btn-clear" class="key"><svg class="ico"><use href="#i-trash"/></svg>Clear</button>
-            <label class="switch"><input id="live-typing" type="checkbox"><span>Type live</span></label>
         </div>
-        <p class="tip">Select a text box on the TV (a search field, for example), then type here. Turn on <b>Type live</b> to send each letter as you type.</p>
+        <p class="tip">Select a text box on the TV (a search field, for example), then type here. Letters, numbers and symbols are typed live; use the buttons below for Enter, Back and the arrows.</p>
         <div class="grid keys-grid">
             <button class="key" data-key="BACK_SPACE" data-repeat aria-label="Backspace"><svg class="ico"><use href="#i-backspace"/></svg></button>
             <button class="key" data-key="RETURN" aria-label="Enter"><svg class="ico"><use href="#i-enter"/></svg></button>

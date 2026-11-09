@@ -502,22 +502,11 @@ export default class UI {
 
     #wireKeyboardView() {
         const box = $("#text-box");
-        const live = $("#live-typing");
-        live.checked = localStorage.getItem("live-typing") === "1";
-        live.addEventListener("change", () => {
-            localStorage.setItem("live-typing", live.checked ? "1" : "0");
-            this.#liveLast = box.value;
-            box.focus();
-        });
         box.value = sessionStorage.getItem("text-box") || "";
         this.#liveLast = box.value;
         box.addEventListener("compositionstart", () => { this.#composing = true; });
         box.addEventListener("compositionend", () => { this.#composing = false; this.#onTextInput(); });
         box.addEventListener("input", () => { if (!this.#composing) this.#onTextInput(); });
-        $("#btn-send").addEventListener("click", () => {
-            this.#feedback($("#btn-send"));
-            this.#sendText();
-        });
         $("#btn-clear").addEventListener("click", () => {
             box.value = "";
             this.#liveLast = "";
@@ -529,9 +518,6 @@ export default class UI {
     #onTextInput() {
         const box = $("#text-box");
         sessionStorage.setItem("text-box", box.value);
-        if (!$("#live-typing").checked) {
-            return;
-        }
         // Live typing: send only what changed since the last input (backspaces for deletions, then new text).
         const before = this.#liveLast;
         const now = box.value;
@@ -542,25 +528,21 @@ export default class UI {
         for (let i = 0; i < Math.min(before.length - common, 100); i += 1) {
             this.#inputController.keyboardKey(keys.KEY_BACK_SPACE);
         }
-        if (now.length > common) {
-            this.#inputController.keyboardText(now.slice(common).replace(/\r\n?/g, "\n"));
+        // A line break in the box is the Enter key; everything else is sent as text (the box itself never holds one).
+        const lines = now.slice(common).split(/\r\n?|\n/);
+        lines.forEach((line, index) => {
+            if (index > 0) {
+                this.#inputController.keyboardKey(keys.KEY_RETURN);
+            }
+            if (line) {
+                this.#inputController.keyboardText(line);
+            }
+        });
+        if (lines.length > 1) {
+            box.value = now.replace(/\r\n?|\n/g, "");
+            sessionStorage.setItem("text-box", box.value);
         }
-        this.#liveLast = now;
-    }
-
-    #sendText() {
-        const box = $("#text-box");
-        if (!box.value) {
-            return;
-        }
-        if (!$("#live-typing").checked) {
-            this.#inputController.keyboardText(box.value.replace(/\r\n?/g, "\n"));
-            this.toast("Sent to the TV");
-        }
-        box.value = "";
-        this.#liveLast = "";
-        sessionStorage.removeItem("text-box");
-        box.focus();
+        this.#liveLast = box.value;
     }
 
     // ------------------------------------------------------------------ touchpad view

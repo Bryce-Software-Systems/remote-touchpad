@@ -18,7 +18,7 @@
  */
 
 import {
-    KEY_SUPER, KEY_BACK_SPACE, KEY_RETURN, KEY_DELETE, KEY_HOME, KEY_END,
+    KEY_BACK_SPACE, KEY_RETURN, KEY_DELETE, KEY_HOME, KEY_END,
     KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN,
 } from "./inputcontroller.mjs";
 
@@ -40,9 +40,7 @@ export default class Keyboard {
             return;
         }
         let key = null;
-        if (event.key == "OS" || event.key == "Super" || event.key == "Meta") {
-            key = KEY_SUPER;
-        } else if (event.key == "Backspace") {
+        if (event.key == "Backspace") {
             key = KEY_BACK_SPACE;
         } else if (event.key == "Enter") {
             key = KEY_RETURN;

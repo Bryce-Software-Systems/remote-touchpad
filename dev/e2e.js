@@ -71,6 +71,14 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   result.miniHiddenOnRemote = await page.$eval('#mini-np', n => n.classList.contains('hidden'));
   result.backToRemote = await page.evaluate(() => sessionStorage.getItem('tab'));
 
+  // ---- keyboard: live typing only
+  await page.click('[data-go=keys]');
+  result.keyboardOptions = await page.$$eval('#btn-send, #live-typing', n => n.length);
+  await page.type('#text-box', 'hi!');
+  await page.waitForTimeout(200);
+  result.typedFrames = sent.filter(f => typeof f === 'string' && f[0] === 't');
+  await page.click('[data-go=more]');
+
   // ---- more: cast
   await page.click('[data-go=more]');
   await shot('more');

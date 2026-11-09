@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.4 (Velarium fork)
+
+* Keyboard: typing is live only (the Send button and the "Type live" switch are gone). A line break in the box presses Enter.
+* The server only types letters, digits, punctuation, symbols and spaces (at most 500 characters per message); control characters and other non-text are dropped. A physical keyboard's Super key is no longer forwarded.
+
 ## 1.7.3 (Velarium fork)
 
 * **Set up** is now three tabs: Wi-Fi (status card, signal bars), **Bluetooth** (scan, pair, connect, disconnect, forget) and **Settings** (the TV's Configuration editor: switches, colour swatches, pills, menus; saved at once, "Apply now" restarts the launcher).

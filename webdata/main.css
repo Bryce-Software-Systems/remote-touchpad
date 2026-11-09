@@ -285,7 +285,7 @@ main { min-height: 0; position: relative; grid-row: 2; }
     -webkit-user-select: text; user-select: text;
 }
 #view-keys textarea:focus { border-color: var(--accent); outline: none; }
-.text-actions { width: 100%; grid-template-columns: 1.4fr 1fr 1fr; align-items: stretch; }
+.text-actions { width: 100%; grid-template-columns: 1fr; align-items: stretch; }
 .switch { display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; min-height: var(--tap); padding: 0 10px; font-size: 0.85rem; }
 .switch input { width: 20px; height: 20px; accent-color: var(--accent); }
 .tip { color: var(--muted); font-size: 0.88rem; line-height: 1.45; }
