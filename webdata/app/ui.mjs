@@ -55,6 +55,7 @@ export default class UI {
     #liveLast = "";
     #composing = false;
     #configured = false;
+    #rejected = false;
     #nowPlaying;
     #search;
     #more;
@@ -121,7 +122,8 @@ export default class UI {
 
     // The connection dropped: show the reconnecting screen. The socket retries by itself (socket.mjs) and calls
     // configure() again when it is back.
-    close() {
+    close(rejected = false) {
+        this.#rejected = rejected;
         this.#ready = false;
         this.#closed = true;
         this.#nowPlaying.update(null);
@@ -209,6 +211,9 @@ export default class UI {
         overlay.classList.toggle("hidden", this.#ready);
         $("#overlay-text").textContent = this.#closed ? "Reconnecting…" : "Connecting to your TV…";
         $("#overlay-sub").classList.toggle("hidden", !this.#closed);
+        $("#overlay-sub").textContent = this.#rejected
+            ? "The TV box refused this link. Scan the QR code on your TV again."
+            : "Looking for your TV box. This will reconnect by itself.";
         const fullscreenEnabled = compat.fullscreenEnabled();
         for (const element of $$(".visible-if-fullscreen-enabled")) {
             element.classList.toggle("hidden", !fullscreenEnabled);

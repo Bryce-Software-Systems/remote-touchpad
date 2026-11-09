@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.1 (Velarium fork)
+
+* Fix: the page never connected when opened from the QR code Velarium shows while Remote Touchpad is already running (that address carries the secret as `?secret=...`, the page only read `#...`). Both forms work now.
+* When the box rejects the link repeatedly, the overlay says to scan the QR code again instead of "Looking for your TV box".
+
 ## 1.7.0 (Velarium fork)
 
 * Now Playing card (seek bar, transport controls, audio and subtitle pickers) and a mini bar on the other screens.
