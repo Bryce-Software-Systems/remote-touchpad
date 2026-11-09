@@ -47,11 +47,12 @@ const (
 	authenticationRateBurst int           = 10
 	challengeLength         int           = 8
 	defaultBind             string        = ":0"
-	version                 string        = "1.5.3"
+	version                 string        = "1.6.0"
 	prettyAppName           string        = "Remote Touchpad"
 )
 
 type config struct {
+	Velarium         bool    `json:"velarium"` // a Velarium launcher is reachable (set per connection)
 	UpdateRate       uint    `json:"updateRate"`
 	ScrollSpeed      float64 `json:"scrollSpeed"`
 	MoveSpeed        float64 `json:"moveSpeed"`
@@ -164,7 +165,11 @@ func main() {
 	flag.Float64Var(&config.ScrollSpeed, "scroll-speed", 1, "scroll speed multiplier")
 	flag.Float64Var(&config.MouseMoveSpeed, "mouse-move-speed", 1, "mouse move speed multiplier")
 	flag.Float64Var(&config.MouseScrollSpeed, "mouse-scroll-speed", 1, "mouse scroll speed multiplier")
+	var velariumSocket string
+	flag.StringVar(&velariumSocket, "velarium-socket", defaultVelariumSocket(),
+		"Unix socket of a Velarium launcher (empty: Velarium features disabled)")
 	flag.Parse()
+	velarium := newVelariumClient(velariumSocket)
 	if showVersion {
 		fmt.Println(version)
 		return
@@ -239,10 +244,17 @@ func main() {
 		if !challenge.verify(message) {
 			return
 		}
-		websocket.JSON.Send(ws, config)
+		connectionConfig := config
+		connectionConfig.Velarium = velarium.available()
+		websocket.JSON.Send(ws, connectionConfig)
 		for {
 			if err := websocket.Message.Receive(ws, &message); err != nil {
 				return
+			}
+			if strings.HasPrefix(message, "v") {
+				// Velarium request: slow (talks to the launcher), so answer from a goroutine and keep input flowing.
+				go handleVelariumMessage(ws, velarium, message[1:])
+				continue
 			}
 			if err := processCommand(controller, message); err != nil {
 				log.Print(fmt.Errorf("%s controller: %w", controllerName, err))
