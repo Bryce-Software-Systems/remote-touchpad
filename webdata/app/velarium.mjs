@@ -138,4 +138,24 @@ export default class Velarium {
     wifiConnect(ssid, password) {
         return this.#call({op: "wifi_connect", ssid, password}, 70000);
     }
+
+    btList() {
+        return this.#call({op: "bt_list"}, 40000);
+    }
+
+    btAction(mac, action) {
+        return this.#call({op: "bt_action", mac, action}, 80000);
+    }
+
+    configGet() {
+        return this.#call({op: "config_get"});
+    }
+
+    configSet(section, key, value) {
+        return this.#call({op: "config_set", section, key, value});
+    }
+
+    configApply() {
+        return this.#call({op: "config_apply"});
+    }
 }

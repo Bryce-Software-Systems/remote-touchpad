@@ -7,7 +7,9 @@
  *    (at your option) any later version.
  */
 
-import {$, $$, debounce, el, formatBytes, formatWhen} from "./dom.mjs";
+import {$, $$, debounce, el, formatBytes, formatWhen, icon} from "./dom.mjs";
+import Bluetooth from "./bluetooth.mjs";
+import Settings from "./settings.mjs";
 
 const DVR_REFRESH = 5000; // milliseconds
 const STATUS_LABELS = {scheduled: "Scheduled", recording: "Recording", completed: "Ready", failed: "Failed", cancelled: "Stopped", missed: "Missed"};
@@ -21,6 +23,9 @@ export default class More {
     #dvrMode = "recordings";
     #channel = null;
     #pendingDelete = null;
+    #bluetooth;
+    #settings;
+    #setupTab = "wifi";
 
     constructor(velarium, {toast, onOpened}) {
         this.#velarium = velarium;
@@ -34,6 +39,8 @@ export default class More {
         }
         this.#wireCast();
         this.#wireDvr();
+        this.#bluetooth = new Bluetooth(velarium, {toast});
+        this.#settings = new Settings(velarium, {toast});
         this.#wireSetup();
     }
 
@@ -49,6 +56,7 @@ export default class More {
             this.#showDvr(this.#dvrMode);
         } else if (page === "setup") {
             this.#refreshSetup();
+            this.#showSetupTab(this.#setupTab);
         } else if (page === "cast") {
             $("#cast-url").focus({preventScroll: true});
         }
@@ -265,18 +273,39 @@ export default class More {
             event.preventDefault();
             this.#connectWifi();
         });
+        for (const tab of $$("[data-setup-tab]")) {
+            tab.addEventListener("click", () => this.#showSetupTab(tab.dataset.setupTab));
+        }
         $("#wifi-cancel").addEventListener("click", () => $("#wifi-form").classList.add("hidden"));
+    }
+
+    #showSetupTab(name) {
+        this.#setupTab = name;
+        for (const tab of $$("[data-setup-tab]")) {
+            tab.classList.toggle("active", tab.dataset.setupTab === name);
+        }
+        for (const pane of $$("[data-setup-pane]")) {
+            pane.classList.toggle("hidden", pane.dataset.setupPane !== name);
+        }
+        if (name === "bluetooth") {
+            this.#bluetooth.opened();
+        } else if (name === "settings") {
+            this.#settings.opened();
+        }
     }
 
     async #refreshSetup() {
         try {
             const status = await this.#velarium.setupStatus();
             const wifi = status.wifi || {};
-            $("#wifi-status").textContent = !wifi.available ? "Network tools aren't available on this box."
-                : wifi.connection ? `Connected to ${wifi.connection}${wifi.internet === "full" ? " · internet OK" : wifi.internet === "limited" || wifi.internet === "none" ? " · no internet" : ""}`
-                : "Not connected to a network.";
+            $("#wifi-status").textContent = !wifi.available ? "Network tools unavailable"
+                : wifi.connection ? wifi.connection : "Not connected";
+            $("#wifi-status-sub").textContent = !wifi.available ? "This box can't manage networks from here."
+                : wifi.connection ? (wifi.internet === "full" ? "Connected · internet OK" : wifi.internet === "limited" || wifi.internet === "none" ? "Connected · no internet" : "Connected")
+                : "Choose a network below.";
         } catch (error) {
-            $("#wifi-status").textContent = `Couldn't read the box's status (${error.message}).`;
+            $("#wifi-status").textContent = "Status unavailable";
+            $("#wifi-status-sub").textContent = error.message;
         }
     }
 
@@ -292,10 +321,17 @@ export default class More {
             } else if (!reply.networks.length) {
                 list.replaceChildren(el("p", {class: "empty", text: reply.ethernet ? "This box is on a wired connection. No Wi-Fi networks in range." : "No networks in range."}));
             } else {
-                list.replaceChildren(...reply.networks.map((network) =>
-                    el("button", {class: "result", onclick: () => this.#chooseNetwork(network)},
-                        el("span", {class: "result-title", text: network.ssid}),
-                        el("span", {class: "result-sub", text: `${network.connected ? "Connected · " : ""}${network.secured ? "Secured" : "Open"} · signal ${network.signal}%`}))));
+                list.replaceChildren(...reply.networks.map((network) => {
+                    const bars = Math.max(1, Math.min(4, Math.ceil(network.signal / 25)));
+                    return el("button", {class: `device network${network.connected ? " connected" : ""}`, onclick: () => this.#chooseNetwork(network)},
+                        el("span", {class: "signal", "aria-label": `signal ${network.signal}%`},
+                            [1, 2, 3, 4].map((n) => el("i", {class: n <= bars ? "on" : ""}))),
+                        el("span", {class: "device-main"}, el("strong", {text: network.ssid}),
+                            el("span", {class: "chips"},
+                                network.connected && el("span", {class: "chip ok", text: "Connected"}),
+                                el("span", {class: "chip", text: network.secured ? "Secured" : "Open"}))),
+                        network.secured && icon("lock"));
+                }));
             }
         } catch (error) {
             list.replaceChildren(el("p", {class: "empty", text: `Couldn't scan (${error.message}).`}));

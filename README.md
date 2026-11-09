@@ -46,7 +46,7 @@ dropped before it reaches the launcher:
 | `open` | `kind` (cinema, channel, programme, recording, youtube), `ref`, `at` | open a search result on the TV |
 | `cast` | `url` | open a link on the TV |
 | `dvr`, `dvr_cancel`, `dvr_delete`, `dvr_channels`, `dvr_programs`, `dvr_schedule` | ids, `q`, `streamId`, `startTs` | the DVR |
-| `setup_status`, `wifi_list`, `wifi_connect` | `ssid`, `password` | first-run setup |
+| `setup_status`, `wifi_list`, `wifi_connect`, `bt_list`, `bt_action`, `config_get`, `config_set`, `config_apply` | `ssid`, `password`, `mac`, `action`, `section`, `key`, `value` | Wi-Fi, Bluetooth and settings setup |
 
 Slow operations (Wi-Fi, sign-in, search) are given longer than a menu fetch. On the websocket these are
 `v{"id":N,"op":...}` messages; the answer is `{"id":N,...}`. The launcher side is `htpc/control_server.py` and

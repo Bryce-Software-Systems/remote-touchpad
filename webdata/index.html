@@ -39,6 +39,12 @@
     <symbol id="i-cast" viewBox="0 0 24 24"><path d="M3 8V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M3 12a8 8 0 0 1 8 8M3 16a4 4 0 0 1 4 4M3 20h.01"/></symbol>
     <symbol id="i-record" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></symbol>
     <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a10 10 0 0 1 13 0M8.5 16a6 6 0 0 1 7 0"/><path d="M12 19.5h.01"/></symbol>
+    <symbol id="i-bluetooth" viewBox="0 0 24 24"><path d="M7 7l10 10-5 4.5V2.5L17 7 7 17"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
     <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
     <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
 </svg>
@@ -175,7 +181,7 @@
         <div id="more-menu" class="more-menu">
             <button class="more-card" data-more="cast"><svg class="ico"><use href="#i-cast"/></svg><span><strong>Cast a link</strong><em>Send a web page or YouTube video to the TV</em></span></button>
             <button class="more-card" data-more="dvr"><svg class="ico"><use href="#i-record"/></svg><span><strong>Recordings</strong><em>Schedule Live TV, play or delete recordings</em></span></button>
-            <button class="more-card" data-more="setup"><svg class="ico"><use href="#i-wifi"/></svg><span><strong>Set up</strong><em>Wi-Fi, typed on your phone</em></span></button>
+            <button class="more-card" data-more="setup"><svg class="ico"><use href="#i-sliders"/></svg><span><strong>Set up</strong><em>Wi-Fi, Bluetooth and the TV's settings</em></span></button>
         </div>
 
         <div data-page="cast" class="page hidden">
@@ -216,19 +222,47 @@
         <div data-page="setup" class="page hidden">
             <button class="back" data-more-back><svg class="ico"><use href="#i-chevron-left"/></svg>More</button>
             <h2>Set up</h2>
-            <p class="warning">Passwords you type here travel over your home network without encryption. Only use this on a network you trust.</p>
-            <h3>Wi-Fi</h3>
-            <p id="wifi-status" class="tip">Checking…</p>
-            <button id="wifi-scan" class="key">Scan for networks</button>
-            <div id="wifi-list" class="list"></div>
-            <form id="wifi-form" class="card hidden">
-                <strong id="wifi-form-title"></strong>
-                <label id="wifi-password-row" class="field"><input id="wifi-password" type="password" placeholder="Wi-Fi password" autocomplete="off"></label>
-                <div class="row two">
-                    <button type="button" id="wifi-cancel" class="key">Cancel</button>
-                    <button type="submit" id="wifi-connect" class="primary">Connect</button>
+            <div class="segmented three" role="tablist">
+                <button data-setup-tab="wifi" class="active"><svg class="ico"><use href="#i-wifi"/></svg>Wi-Fi</button>
+                <button data-setup-tab="bluetooth"><svg class="ico"><use href="#i-bluetooth"/></svg>Bluetooth</button>
+                <button data-setup-tab="settings"><svg class="ico"><use href="#i-sliders"/></svg>Settings</button>
+            </div>
+
+            <div data-setup-pane="wifi" class="pane">
+                <div class="status-card">
+                    <span class="status-icon"><svg class="ico"><use href="#i-wifi"/></svg></span>
+                    <span class="status-text"><strong id="wifi-status">Checking…</strong><em id="wifi-status-sub"></em></span>
                 </div>
-            </form>
+                <p class="warning">Wi-Fi passwords you type here travel over your home network without encryption. Only use this on a network you trust.</p>
+                <button id="wifi-scan" class="key">Scan for networks</button>
+                <div id="wifi-list" class="list"></div>
+                <form id="wifi-form" class="card hidden">
+                    <strong id="wifi-form-title"></strong>
+                    <label id="wifi-password-row" class="field"><input id="wifi-password" type="password" placeholder="Wi-Fi password" autocomplete="off"></label>
+                    <div class="row two">
+                        <button type="button" id="wifi-cancel" class="key">Cancel</button>
+                        <button type="submit" id="wifi-connect" class="primary">Connect</button>
+                    </div>
+                </form>
+            </div>
+
+            <div data-setup-pane="bluetooth" class="pane hidden">
+                <div class="status-card">
+                    <span class="status-icon"><svg class="ico"><use href="#i-bluetooth"/></svg></span>
+                    <span class="status-text"><strong id="bt-status">Bluetooth</strong><em id="bt-status-sub">Put a keyboard, controller or speaker in pairing mode, then scan.</em></span>
+                </div>
+                <button id="bt-scan" class="key"><svg class="ico"><use href="#i-refresh"/></svg>Scan for devices</button>
+                <div id="bt-list" class="list"></div>
+            </div>
+
+            <div data-setup-pane="settings" class="pane hidden">
+                <p class="tip">The same options as Configuration on the TV. Changes are saved straight away and take effect when the launcher restarts.</p>
+                <div id="settings-list" class="settings-list"></div>
+                <div id="settings-apply" class="apply-bar hidden">
+                    <span><strong>Changes saved</strong><em>Restart the launcher to apply them.</em></span>
+                    <button id="settings-apply-go" class="primary small">Apply now</button>
+                </div>
+            </div>
         </div>
     </section>
 </main>

@@ -4,7 +4,7 @@
     go run -tags null . -bind 127.0.0.1:8099 -secret test -velarium-socket /tmp/velarium.sock
     # then open http://127.0.0.1:8099/#test in a browser (phone-sized window)
 
-It simulates every operation the phone UI uses (apps, Now Playing, search, cast, DVR, Wi-Fi/Jellyfin setup) with canned
+It simulates every operation the phone UI uses (apps, Now Playing, search, cast, DVR, Wi-Fi/Bluetooth/settings setup) with canned
 data. The second argument (a Velarium checkout) is only used to find the app icons. Every request is appended to
 <socket>.log as JSON so tests can check what the phone asked for.
 """
@@ -31,7 +31,27 @@ state = {
     ],
     "scheduled": set(),
     "wifi": "Home-5G",
-    "jellyfin": {"signedIn": False, "server": "", "user": ""},
+    "bt": [{"mac": "AA:BB:CC:00:00:01", "name": "Logitech K400", "paired": True, "trusted": True, "connected": True},
+           {"mac": "AA:BB:CC:00:00:02", "name": "Xbox Wireless Controller", "paired": True, "trusted": True, "connected": False},
+           {"mac": "AA:BB:CC:00:00:03", "name": "JBL Flip 5", "paired": False, "trusted": False, "connected": False}],
+    "config": [
+        {"name": "General", "options": [
+            {"key": "WrapEntries", "displayName": "Wrap Around Navigation", "value": "true", "choices": ["true", "false"], "choiceLabels": {}, "isColor": False},
+            {"key": "OnLaunch", "displayName": "Screen Behavior on Launch", "value": "Blank", "choices": ["Blank", "None"], "choiceLabels": {}, "isColor": False},
+            {"key": "DefaultMenu", "displayName": "Startup Menu", "value": "Main", "choices": ["Main", "System", "Hardware", "Games"], "choiceLabels": {}, "isColor": False},
+            {"key": "ApplicationTimeout", "displayName": "Blank Screen Duration (sec)", "value": "3", "choices": [], "choiceLabels": {}, "isColor": False}]},
+        {"name": "Time & Weather", "options": [
+            {"key": "Enabled", "displayName": "Enabled", "value": "true", "choices": ["true", "false"], "choiceLabels": {}, "isColor": False},
+            {"key": "ClockPosition", "displayName": "Clock Position", "value": "top_right", "choices": ["top_left", "top_right"], "choiceLabels": {"top_left": "Left", "top_right": "Right"}, "isColor": False},
+            {"key": "TemperatureUnit", "displayName": "Temperature Unit", "value": "C", "choices": ["C", "F"], "choiceLabels": {}, "isColor": False},
+            {"key": "TimeFormat", "displayName": "Time Format", "value": "%H:%M", "choices": [], "choiceLabels": {}, "isColor": False}]},
+        {"name": "Cinema", "options": [
+            {"key": "AccentPrimaryColor", "displayName": "Accent Color (Primary)", "value": "#12a8ff", "isColor": True,
+             "choices": ["#12a8ff", "#ff5d73", "#50dc8c", "#ffb23e", "#a78bfa", "#ffffff"],
+             "choiceLabels": {"#12a8ff": "Blue", "#ff5d73": "Red", "#50dc8c": "Green", "#ffb23e": "Amber", "#a78bfa": "Violet", "#ffffff": "White"},
+             "description": "Main highlight color used throughout Cinema."},
+            {"key": "SkipForwardSeconds", "displayName": "Skip Forward Seconds", "value": "15", "choices": [], "choiceLabels": {}, "isColor": False,
+             "description": "How far the skip-forward button jumps."}]}],
 }
 
 MENUS = {
@@ -169,7 +189,7 @@ def handle(req):
         return {"ok": True}
     if op == "setup_status":
         return {"ok": True, "wifi": {"available": True, "connection": state["wifi"], "type": "wifi", "internet": "full"},
-                "jellyfin": state["jellyfin"]}
+                "bluetooth": {"available": True}}
     if op == "wifi_list":
         time.sleep(0.5)
         return {"ok": True, "adapter": True, "wifiEnabled": True, "ethernet": False, "networks": [
@@ -181,11 +201,31 @@ def handle(req):
             return {"ok": False, "error": "The password was not accepted."}
         state["wifi"] = req.get("ssid")
         return {"ok": True}
-    if op == "jellyfin_login":
-        if req.get("password") != "pw":
-            return {"ok": False, "error": "Could not sign in. Check the address, username and password."}
-        state["jellyfin"] = {"signedIn": True, "server": req.get("server"), "user": req.get("username")}
-        return {"ok": True, "user": req.get("username")}
+    if op == "bt_list":
+        time.sleep(0.6)
+        return {"ok": True, "available": True, "devices": state["bt"]}
+    if op == "bt_action":
+        device = next((d for d in state["bt"] if d["mac"] == req.get("mac")), None)
+        action = req.get("action")
+        time.sleep(0.3)
+        if action == "forget":
+            state["bt"] = [d for d in state["bt"] if d is not device]
+            return {"ok": True, "device": None}
+        if action in ("pair", "connect"):
+            device.update(paired=True, trusted=True, connected=True)
+        elif action == "disconnect":
+            device["connected"] = False
+        return {"ok": True, "device": device}
+    if op == "config_get":
+        return {"ok": True, "sections": state["config"]}
+    if op == "config_set":
+        for sec in state["config"]:
+            for opt in sec["options"]:
+                if sec["name"] == req.get("section") and opt["key"] == req.get("key"):
+                    opt["value"] = req.get("value")
+        return {"ok": True, "sections": state["config"]}
+    if op == "config_apply":
+        return {"ok": True}
     return {"ok": False, "error": "unknown"}
 
 
