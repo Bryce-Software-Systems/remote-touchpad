@@ -26,8 +26,8 @@ export default class Velarium {
         this.available = Boolean(config.velarium);
     }
 
-    async #call(payload) {
-        const reply = await this.#socket.request(payload);
+    async #call(payload, timeout = undefined) {
+        const reply = await this.#socket.request(payload, timeout);
         if (!reply.ok) {
             throw new Error(reply.error || "The TV box refused that");
         }
@@ -81,5 +81,65 @@ export default class Velarium {
 
     power(mode) {
         return this.#call({op: "power", mode});
+    }
+
+    // ---- Now Playing
+    player(app, action, value = null) {
+        return this.#call({op: "player", app, action, value});
+    }
+
+    // ---- search, open, cast
+    async search(q) {
+        return (await this.#call({op: "search", q}, 25000)).results || [];
+    }
+
+    open(kind, ref, at = undefined) {
+        return this.#call({op: "open", kind, ref, ...(at === undefined ? {} : {at})});
+    }
+
+    cast(url) {
+        return this.#call({op: "cast", url});
+    }
+
+    // ---- DVR
+    dvr() {
+        return this.#call({op: "dvr"});
+    }
+
+    dvrCancel(id) {
+        return this.#call({op: "dvr_cancel", id});
+    }
+
+    dvrDelete(id) {
+        return this.#call({op: "dvr_delete", id});
+    }
+
+    async dvrChannels(q = "") {
+        return (await this.#call({op: "dvr_channels", q})).channels || [];
+    }
+
+    async dvrPrograms(streamId) {
+        return (await this.#call({op: "dvr_programs", streamId})).programs || [];
+    }
+
+    dvrSchedule(streamId, startTs) {
+        return this.#call({op: "dvr_schedule", streamId, startTs});
+    }
+
+    // ---- first-run setup
+    setupStatus() {
+        return this.#call({op: "setup_status"}, 20000);
+    }
+
+    wifiList() {
+        return this.#call({op: "wifi_list"}, 45000);
+    }
+
+    wifiConnect(ssid, password) {
+        return this.#call({op: "wifi_connect", ssid, password}, 70000);
+    }
+
+    jellyfinLogin(server, username, password) {
+        return this.#call({op: "jellyfin_login", server, username, password}, 40000);
     }
 }

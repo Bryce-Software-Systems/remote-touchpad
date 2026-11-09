@@ -22,18 +22,20 @@ import Mouse from "./mouse.mjs";
 import Touchpad from "./touchpad.mjs";
 import * as compat from "./compat.mjs";
 import * as keys from "./inputcontroller.mjs";
+import {$, $$, el} from "./dom.mjs";
+import NowPlaying from "./nowplaying.mjs";
+import Search from "./search.mjs";
+import More from "./more.mjs";
 
 const CLICK_VIBRATION_PATTERN = [10];
 const IGNORE_CLICK_AFTER_TOUCH_DURATION = 1000; // milliseconds
 const KEY_REPEAT_DELAY = 380; // milliseconds before a held key starts repeating
 const KEY_REPEAT_INTERVAL = 90;
-const STATUS_POLL_INTERVAL = 3000;
+const STATUS_POLL_INTERVAL = 2000;
 const TOAST_DURATION = 2600;
 const CONFIRM_TIMEOUT = 4000;
-const TABS = ["home", "remote", "pad", "keys"];
-
-const $ = (selector, root = document) => root.querySelector(selector);
-const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+const TABS = ["home", "remote", "pad", "keys", "more"];
+const NEEDS_VELARIUM = ["home", "more"];
 
 export default class UI {
     #inputController;
@@ -52,6 +54,10 @@ export default class UI {
     #ignoreClickUntilTimeStamp = Number.MIN_VALUE;
     #liveLast = "";
     #composing = false;
+    #configured = false;
+    #nowPlaying;
+    #search;
+    #more;
 
     constructor(inputController, velarium) {
         this.#inputController = inputController;
@@ -66,6 +72,16 @@ export default class UI {
         for (const tab of $$("[data-go]")) {
             tab.addEventListener("click", () => this.showTab(tab.dataset.go));
         }
+        this.#nowPlaying = new NowPlaying(velarium, {
+            onError: (text) => this.toast(text),
+            onOpenRemote: () => this.showTab("remote"),
+            onChanged: () => setTimeout(() => this.#pollStatus(), 250),
+        });
+        this.#search = new Search(velarium, {
+            openApp: (entry, menu) => this.#openEntry(entry, menu),
+            openResult: (result) => this.#openResult(result),
+        });
+        this.#more = new More(velarium, {toast: (text) => this.toast(text), onOpened: () => this.#afterOpened()});
         this.#wireKeys();
         this.#wireTopBar();
         this.#wireHome();
@@ -81,21 +97,34 @@ export default class UI {
         this.#keyboard.configure(config);
         this.#touchpad.configure(config);
         this.#velarium.configure(config);
-        if (!this.#closed) {
-            this.#ready = true;
+        this.#closed = false;
+        this.#ready = true;
+        const reconnected = this.#configured;
+        this.#configured = true;
+        if (!reconnected) {
+            const saved = sessionStorage.getItem("tab");
+            this.#tab = TABS.includes(saved) ? saved : (this.#velarium.available ? "home" : "remote");
         }
-        const saved = sessionStorage.getItem("tab");
-        this.#tab = TABS.includes(saved) ? saved : (this.#velarium.available ? "home" : "remote");
-        if (this.#tab === "home" && !this.#velarium.available) {
+        if (NEEDS_VELARIUM.includes(this.#tab) && !this.#velarium.available) {
             this.#tab = "remote";
         }
         this.#update();
         this.showTab(this.#tab);
+        if (reconnected) {
+            this.#velarium.loaded = false;           // the box may have restarted: reload its apps
+            if (this.#tab === "home") {
+                this.#loadHome(true);
+            }
+            this.toast("Reconnected");
+        }
     }
 
+    // The connection dropped: show the reconnecting screen. The socket retries by itself (socket.mjs) and calls
+    // configure() again when it is back.
     close() {
         this.#ready = false;
         this.#closed = true;
+        this.#nowPlaying.update(null);
         this.#syncPolling();
         this.#update();
     }
@@ -144,7 +173,7 @@ export default class UI {
         if (!TABS.includes(name)) {
             return;
         }
-        if (name === "home" && !this.#velarium.available) {
+        if (NEEDS_VELARIUM.includes(name) && !this.#velarium.available) {
             name = "remote";
         }
         this.#tab = name;
@@ -165,6 +194,8 @@ export default class UI {
         if (name === "home") {
             this.#loadHome();
         }
+        this.#more.visible(name === "more");
+        this.#nowPlaying.setTab(name);
         if (name === "keys") {
             $("#text-box").focus({preventScroll: true});
         } else {
@@ -174,23 +205,25 @@ export default class UI {
     }
 
     #update() {
-        const overlays = {opening: !this.#ready && !this.#closed, closed: this.#closed};
-        $("#opening").classList.toggle("hidden", !overlays.opening);
-        $("#closed").classList.toggle("hidden", !overlays.closed);
+        const overlay = $("#opening");
+        overlay.classList.toggle("hidden", this.#ready);
+        $("#overlay-text").textContent = this.#closed ? "Reconnecting…" : "Connecting to your TV…";
+        $("#overlay-sub").classList.toggle("hidden", !this.#closed);
         const fullscreenEnabled = compat.fullscreenEnabled();
         for (const element of $$(".visible-if-fullscreen-enabled")) {
             element.classList.toggle("hidden", !fullscreenEnabled);
         }
         $("#mouse").classList.toggle("hidden", !compat.pointerLockElement());
-        $("#btn-home").classList.toggle("hidden", false);
         if (this.#closed) {
-            this.#setStatusLine("Disconnected", true);
+            this.#setStatusLine("Reconnecting…", true);
         } else if (this.#ready) {
             this.#setStatusLine(this.#velarium.available ? "Connected to Velarium" : "Connected (touchpad only)");
         }
-        $$("[data-go='home']").forEach((tab) => tab.classList.toggle("hidden", this.#ready && !this.#velarium.available));
+        for (const tab of $$("[data-go]")) {
+            tab.classList.toggle("hidden", this.#ready && !this.#velarium.available && NEEDS_VELARIUM.includes(tab.dataset.go));
+        }
         const tabbar = $(".tabbar");
-        tabbar.style.gridTemplateColumns = `repeat(${$$("[data-go]:not(.hidden)", tabbar).length || 4}, 1fr)`;
+        tabbar.style.gridTemplateColumns = `repeat(${$$("[data-go]:not(.hidden)", tabbar).length || 5}, 1fr)`;
     }
 
     // ------------------------------------------------------------------ keys, top bar
@@ -270,6 +303,7 @@ export default class UI {
     #wireHome() {
         $("#app-search").addEventListener("input", (event) => {
             this.#query = event.target.value.trim().toLowerCase();
+            this.#search.setQuery(event.target.value);
             this.#renderTiles();
         });
     }
@@ -371,6 +405,10 @@ export default class UI {
         $("#home-message").classList.add("hidden");
         this.#renderCrumbs();
         let items;
+        if (this.#search.active) {
+            $("#tiles").replaceChildren();               // the search results (search.mjs) take the screen
+            return;
+        }
         if (this.#query) {
             items = this.#velarium.allEntries()
                 .filter(({entry}) => entry.title.toLowerCase().includes(this.#query));
@@ -410,6 +448,22 @@ export default class UI {
         }
     }
 
+    async #openResult(result) {
+        try {
+            await this.#velarium.open(result.kind, result.ref, result.at);
+            this.toast(`Opening ${result.title}…`);
+            this.#afterOpened();
+        } catch (error) {
+            this.toast(error.message);
+        }
+    }
+
+    // After something starts on the TV you almost always want to drive it.
+    #afterOpened() {
+        setTimeout(() => this.showTab("remote"), 700);
+        this.#pollStatus();
+    }
+
     // ------------------------------------------------------------------ status polling
 
     #syncPolling() {
@@ -431,8 +485,9 @@ export default class UI {
         try {
             const status = await this.#velarium.status();
             const running = Boolean(status.appRunning);
+            this.#nowPlaying.update(status.nowPlaying || null);
             $("#app-banner").classList.toggle("hidden", !running);
-            this.#setStatusLine(running ? "An app is running on the TV" : `Velarium · ${status.menu || this.#velarium.home}`);
+            this.#setStatusLine(running ? "App running on the TV" : `Velarium · ${status.menu || this.#velarium.home}`);
         } catch (error) {
             this.#setStatusLine("Velarium isn't answering", true);
         }

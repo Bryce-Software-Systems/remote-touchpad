@@ -73,7 +73,7 @@ func TestSanitizeAcceptsOnlyKnownOperationsAndFields(t *testing.T) {
 		"power":  {"op": "power", "mode": "restart"},
 	}
 	for name, raw := range good {
-		got, err := sanitizeVelariumRequest(raw)
+		got, _, err := sanitizeVelariumRequest(raw)
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -95,7 +95,7 @@ func TestSanitizeAcceptsOnlyKnownOperationsAndFields(t *testing.T) {
 		{"op": "power", "mode": "format"},
 	}
 	for _, raw := range bad {
-		if _, err := sanitizeVelariumRequest(raw); err == nil {
+		if _, _, err := sanitizeVelariumRequest(raw); err == nil {
 			t.Fatalf("expected %v to be rejected", raw)
 		}
 	}
@@ -196,5 +196,62 @@ func TestDefaultSocketFollowsTheLaunchersRuntimeDirectoryChoice(t *testing.T) {
 	t.Setenv("HOME", home)
 	if got, want := defaultVelariumSocket(), filepath.Join(home, ".cache", "velarium", "control.sock"); got != want {
 		t.Fatalf("missing runtime dir: got %q, want %q", got, want)
+	}
+}
+
+func TestSanitizeCoversTheNewOperationsAndRejectsMalformedFields(t *testing.T) {
+	good := []map[string]any{
+		{"op": "nowplaying"}, {"op": "dvr"}, {"op": "setup_status"}, {"op": "wifi_list"},
+		{"op": "search", "q": "the national"},
+		{"op": "open", "kind": "cinema", "ref": "0123456789abcdef"},
+		{"op": "open", "kind": "programme", "ref": "42", "at": 1.8e9},
+		{"op": "cast", "url": "https://example.com/a?b=1"},
+		{"op": "player", "app": "cinema", "action": "seek", "value": -10.0},
+		{"op": "player", "app": "livetv", "action": "subtitle", "value": nil},
+		{"op": "player", "app": "cinema", "action": "audio", "value": "eng"},
+		{"op": "dvr_cancel", "id": "abcdef012345"}, {"op": "dvr_delete", "id": "abcdef012345"},
+		{"op": "dvr_channels"}, {"op": "dvr_channels", "q": "cbc"},
+		{"op": "dvr_programs", "streamId": "10"}, {"op": "dvr_schedule", "streamId": "10", "startTs": 1.8e9},
+		{"op": "wifi_connect", "ssid": "Home", "password": "hunter2hunter2"}, {"op": "wifi_connect", "ssid": "Open"},
+		{"op": "jellyfin_login", "server": "http://jf.local:8096", "username": "alice", "password": "pw"},
+	}
+	for _, raw := range good {
+		if _, _, err := sanitizeVelariumRequest(raw); err != nil {
+			t.Fatalf("%v: %v", raw, err)
+		}
+	}
+	bad := []map[string]any{
+		{"op": "search"}, {"op": "search", "q": strings.Repeat("a", 81)}, {"op": "search", "q": 5.0},
+		{"op": "open", "kind": "shell", "ref": "x"}, {"op": "open", "kind": "cinema"},
+		{"op": "open", "kind": "programme", "ref": "42", "at": -1.0}, {"op": "open", "kind": "programme", "ref": "42", "at": "soon"},
+		{"op": "cast"}, {"op": "cast", "url": strings.Repeat("a", 2001)},
+		{"op": "player", "app": "../x", "action": "seek"}, {"op": "player", "app": "cinema", "action": "format"},
+		{"op": "player", "app": "cinema", "action": "seek", "value": map[string]any{"a": 1}},
+		{"op": "player", "app": "cinema", "action": "audio", "value": 1e12},
+		{"op": "dvr_cancel", "id": "../../etc"}, {"op": "dvr_delete", "id": 5.0}, {"op": "dvr_cancel", "id": "ABCDEF012345"},
+		{"op": "dvr_programs", "streamId": "1 2"}, {"op": "dvr_schedule", "streamId": "10"},
+		{"op": "wifi_connect"}, {"op": "wifi_connect", "ssid": "x", "password": strings.Repeat("p", 257)},
+		{"op": "jellyfin_login", "server": "x", "username": "a", "password": strings.Repeat("p", 257)},
+		{"op": "jellyfin_login", "server": "x"},
+	}
+	for _, raw := range bad {
+		if _, _, err := sanitizeVelariumRequest(raw); err == nil {
+			t.Fatalf("expected %v to be rejected", raw)
+		}
+	}
+}
+
+func TestOnlyDeclaredFieldsAreForwardedAndSlowOperationsGetLongerTimeouts(t *testing.T) {
+	request, op, err := sanitizeVelariumRequest(map[string]any{
+		"op": "wifi_connect", "ssid": "Home", "password": "pw", "evil": "x", "cmd": "reboot"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(request) != 3 || request["evil"] != nil || request["cmd"] != nil {
+		t.Fatalf("undeclared fields leaked: %v", request)
+	}
+	_, menus, _ := sanitizeVelariumRequest(map[string]any{"op": "menus"})
+	if op.timeout <= menus.timeout || velariumOps["search"].timeout <= menus.timeout {
+		t.Fatal("slow operations must be allowed more time than a menu fetch")
 	}
 }
