@@ -51,5 +51,6 @@ jobs:
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
           REPO: ${{ github.repository }}
         run: |
-          gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || gh release create "$TAG" --repo "$REPO" --title "$TAG" --generate-notes
+          # --target: when started by hand from a branch, the new tag points at the commit that was built, not at master
+          gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || gh release create "$TAG" --repo "$REPO" --title "$TAG" --generate-notes --target "$GITHUB_SHA"
           gh release upload "$TAG" dist/* --repo "$REPO" --clobber
