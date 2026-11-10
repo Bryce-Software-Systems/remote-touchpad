@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (Velarium fork)
+
+* Now-playing card no longer overflows the phone width (no more sideways scrolling while a video plays): its grid columns can shrink below their content's width, and views never scroll horizontally.
+
 ## 1.7.4 (Velarium fork)
 
 * Keyboard: typing is live only (the Send button and the "Type live" switch are gone). A line break in the box presses Enter.
